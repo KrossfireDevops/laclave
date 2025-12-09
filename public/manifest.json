@@ -1,0 +1,40 @@
+{
+  "short_name": "LaClave",
+  "name": "LaClave - Cupones y Experiencias",
+  "description": "Descubre, ahorra y vive experiencias únicas en moteles, bares y centros nocturnos con promociones exclusivas.",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "id": "/",
+  "start_url": "/",
+  "background_color": "#0F0F1B",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#C084FC",
+  "orientation": "portrait",
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "type": "image/png",
+      "sizes": "1170x2532",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/detail.png",
+      "type": "image/png",
+      "sizes": "1170x2532",
+      "form_factor": "narrow"
+    }
+  ]
+}
