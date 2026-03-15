@@ -1,7 +1,7 @@
 // src/components/VisitorPopup.js
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { globalStyles, colors } from '../styles/globalStyles';
+import { globalStyles } from '../styles/globalStyles';
 
 export default function VisitorPopup({ isOpen, onClose, onRegister, onLogin }) {
   const { currentUser } = useAuth();
