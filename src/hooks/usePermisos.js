@@ -25,8 +25,9 @@ export function usePermisos() {
       setLoading(true);
       setError(null);
 
-      // Obtener permisos del usuario a través de sus roles
-      const { data, error: err } = await supabase.rpc('tiene_permiso', {
+      // ✅ CORRECCIÓN: data: _data para silenciar no-unused-vars
+      // La función tiene_permiso devuelve BOOLEAN, así que no usamos el data directamente
+      const {  _data, error: err } = await supabase.rpc('tiene_permiso', {
         p_usuario_id: currentUser.id,
         p_codigo_permiso: '' // Pasamos vacío para obtener todos
       });
@@ -36,7 +37,7 @@ export function usePermisos() {
         setError(err);
         setPermisosUsuario([]);
       } else {
-        // La función tiene_permiso devuelve BOOLEAN, así que cargamos desde rol_permisos
+        // Cargamos permisos detallados desde la vista
         const { data: permisosData, error: permisosError } = await supabase
           .from('vista_permisos_por_rol')
           .select('permiso_codigo')
@@ -52,7 +53,7 @@ export function usePermisos() {
           setError(permisosError);
           setPermisosUsuario([]);
         } else {
-          const codigos = permisosData.map(p => p.permiso_codigo);
+          const codigos = permisosData?.map(p => p.permiso_codigo) || [];
           setPermisosUsuario(codigos);
         }
       }
@@ -142,17 +143,18 @@ export function useAccesoEstablecimiento(establecimientoId) {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No encontrado
+          // No encontrado - usuario no tiene acceso
           setAcceso({ puedeEditar: false, puedeCrearCupones: false, puedeAprobarCanjes: false });
         } else {
           console.error('Error al cargar acceso:', error);
           setAcceso({ puedeEditar: false, puedeCrearCupones: false, puedeAprobarCanjes: false });
         }
       } else {
+        // ✅ Este 'data' SÍ se usa, así que no lleva underscore
         setAcceso({
-          puedeEditar: data.puede_editar || false,
-          puedeCrearCupones: data.puede_crear_cupones || false,
-          puedeAprobarCanjes: data.puede_aprobar_canjes || false
+          puedeEditar: data?.puede_editar || false,
+          puedeCrearCupones: data?.puede_crear_cupones || false,
+          puedeAprobarCanjes: data?.puede_aprobar_canjes || false
         });
       }
     } catch (err) {

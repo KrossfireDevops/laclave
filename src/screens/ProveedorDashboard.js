@@ -11,18 +11,22 @@ import GestorImagenesEstablecimiento from '../components/GestorImagenesEstableci
 // ===== ICONOS =====
 const UserIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
+  </svg>
 );
+
 const EditIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
+
 const ImageIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="M21 15l-5-5L5 21" />
   </svg>
 );
+
 const HomeIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -362,7 +366,7 @@ function HistorialCupones({ establecimientoId }) {
         .eq('establecimiento_id', establecimientoId)
         .eq('status', 'redeemed')
         .order('redeemed_at', { ascending: false });
-      
+
       if (error) {
         console.error('Error al cargar historial:', error);
         setCupones([]);
@@ -386,7 +390,6 @@ function HistorialCupones({ establecimientoId }) {
       <p style={{ color: '#94a3b8', fontSize: 15, marginBottom: 16 }}>
         Cupones canjeados: <strong>{cupones.length}</strong>
       </p>
-      
       {loading ? (
         <p style={{ color: '#94a3b8' }}>Cargando historial...</p>
       ) : cupones.length === 0 ? (
@@ -444,8 +447,9 @@ function SolicitudesCanje({ establecimientoId }) {
         .select('id, cupon_id, cliente_id, status, requested_at, room_number')
         .eq('status', 'pendiente')
         .order('requested_at', { ascending: false });
-      
+
       if (redencionError) throw redencionError;
+
       if (!redenciones || redenciones.length === 0) {
         setSolicitudes([]);
         setLoading(false);
@@ -471,8 +475,9 @@ function SolicitudesCanje({ establecimientoId }) {
         `)
         .in('id', cuponIds)
         .eq('establecimiento_id', establecimientoId);
-      
+
       if (cuponError) throw cuponError;
+
       if (!cupones || cupones.length === 0) {
         setSolicitudes([]);
         setLoading(false);
@@ -483,11 +488,13 @@ function SolicitudesCanje({ establecimientoId }) {
       cupones.forEach(c => { cuponMap[c.id] = c; });
 
       const clienteIds = redenciones.map(r => r.cliente_id);
-      const { data: clientes, error: clienteError } = await supabase
+      
+      // ✅ CORRECCIÓN: _clienteError para silenciar no-unused-vars de ESLint
+      const { data: clientes, error: _clienteError } = await supabase
         .from('usuarios')
         .select('id, alias, nombre, email')
         .in('id', clienteIds);
-      
+
       const clienteMap = {};
       (clientes || []).forEach(u => { clienteMap[u.id] = u; });
 
@@ -500,6 +507,7 @@ function SolicitudesCanje({ establecimientoId }) {
         }));
 
       setSolicitudes(solicitudesCompletas);
+
     } catch (err) {
       console.error('Error al cargar solicitudes:', err);
       setSolicitudes([]);
@@ -510,7 +518,6 @@ function SolicitudesCanje({ establecimientoId }) {
 
   useEffect(() => {
     fetchSolicitudes();
-    
     // Auto-refresh cada 30 segundos para pantalla principal
     const interval = setInterval(fetchSolicitudes, 30000);
     return () => clearInterval(interval);
@@ -518,6 +525,7 @@ function SolicitudesCanje({ establecimientoId }) {
 
   const aceptarCupon = async (redencionId, cuponId) => {
     if (!window.confirm('¿Confirmar la redención de este cupón?')) return;
+    
     setProcesando(true);
     try {
       const { error: redencionError } = await supabase
@@ -528,7 +536,7 @@ function SolicitudesCanje({ establecimientoId }) {
           responded_by: currentUser.id
         })
         .eq('id', redencionId);
-      
+
       if (redencionError) throw redencionError;
 
       const { error: cuponError } = await supabase
@@ -539,11 +547,12 @@ function SolicitudesCanje({ establecimientoId }) {
           redeemed_by: currentUser.id
         })
         .eq('id', cuponId);
-      
+
       if (cuponError) throw cuponError;
 
       alert('✅ Cupón redimido exitosamente');
       fetchSolicitudes();
+
     } catch (err) {
       console.error('Error al procesar redención:', err);
       alert('❌ Error al procesar la redención: ' + err.message);
@@ -596,7 +605,7 @@ function SolicitudesCanje({ establecimientoId }) {
           </span>
         </div>
       </div>
-      
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <div style={{
@@ -669,14 +678,14 @@ function SolicitudesCanje({ establecimientoId }) {
               position: 'relative',
               overflow: 'hidden'
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 48px rgba(16, 185, 129, 0.25)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(16, 185, 129, 0.15)';
-            }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 48px rgba(16, 185, 129, 0.25)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 8px 32px rgba(16, 185, 129, 0.15)';
+              }}
             >
               {/* Badge de "Nuevo" */}
               <div style={{
@@ -694,9 +703,9 @@ function SolicitudesCanje({ establecimientoId }) {
               }}>
                 🔔 NUEVO
               </div>
-              
+
               <TarjetaCupon cupon={s.cupones} />
-              
+
               {/* Info del cliente mejorada */}
               <div style={{
                 padding: 16,
@@ -736,22 +745,22 @@ function SolicitudesCanje({ establecimientoId }) {
                   })}
                 </p>
               </div>
-              
+
               {/* Botón de acción destacado */}
               <button
                 onClick={() => aceptarCupon(s.id, s.cupon_id)}
                 disabled={procesando}
                 style={{
                   ...proveedorStyles.aceptarButton,
-                  background: procesando 
-                    ? '#6B7280' 
+                  background: procesando
+                    ? '#6B7280'
                     : 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                   opacity: 1,
                   cursor: procesando ? 'not-allowed' : 'pointer',
                   fontSize: 17,
                   fontWeight: 'bold',
-                  boxShadow: procesando 
-                    ? 'none' 
+                  boxShadow: procesando
+                    ? 'none'
                     : '0 4px 16px rgba(16, 185, 129, 0.4)',
                   marginTop: 0
                 }}
@@ -772,7 +781,7 @@ function SolicitudesCanje({ establecimientoId }) {
               >
                 {procesando ? '⏳ Procesando...' : '✅ AUTORIZAR CUPÓN'}
               </button>
-              
+
               <style>{`
                 @keyframes pulse {
                   0%, 100% { opacity: 1; }
@@ -804,7 +813,7 @@ function ListaHabitaciones({ establecimientoId, establecimientoNombre, onRefresh
         .select('*')
         .eq('establecimiento_id', establecimientoId)
         .order('nombre');
-      
+
       if (error) throw error;
       setHabitaciones(data || []);
     } catch (err) {
@@ -839,7 +848,7 @@ function ListaHabitaciones({ establecimientoId, establecimientoNombre, onRefresh
           capacidad: parseInt(updatedHab.capacidad)
         })
         .eq('id', updatedHab.id);
-      
+
       if (error) throw error;
       alert('✅ Precio actualizado exitosamente');
       setShowEditModal(false);
@@ -860,7 +869,7 @@ function ListaHabitaciones({ establecimientoId, establecimientoNombre, onRefresh
           imagenes: updatedHab.imagenes
         })
         .eq('id', updatedHab.id);
-      
+
       if (error) throw error;
       alert('✅ Imágenes actualizadas exitosamente');
       setShowImageModal(false);
@@ -878,7 +887,6 @@ function ListaHabitaciones({ establecimientoId, establecimientoNombre, onRefresh
       <p style={{ color: '#94a3b8', fontSize: 15, marginBottom: 16 }}>
         Habitaciones: <strong>{habitaciones.length}</strong>
       </p>
-      
       {loading ? (
         <p style={{ color: '#94a3b8' }}>Cargando habitaciones...</p>
       ) : habitaciones.length === 0 ? (
@@ -1095,43 +1103,44 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-    
     console.log('📁 Archivos seleccionados:', selectedFiles.length);
     selectedFiles.forEach((f, i) => {
       console.log(`  ${i+1}. ${f.name} (${f.type}, ${(f.size/1024).toFixed(2)}KB)`);
     });
-    
+
     if (selectedFiles.some(f => !f.type.match('image.*'))) {
       alert('Solo se permiten imágenes (JPG, PNG, WEBP, GIF)');
       return;
     }
+
     if (selectedFiles.length + imagenes.length > 10) {
       alert('Máximo 10 imágenes por habitación');
       return;
     }
+
     setFiles(selectedFiles);
     setErrorMessages([]);
   };
 
   const uploadImages = async () => {
     if (files.length === 0) return imagenes;
-    
+
     setUploading(true);
     setProcessing(true);
     setProcessedCount(0);
     setCurrentFileIndex(0);
     setErrorMessages([]);
-    
+
     const uploadedUrls = [...imagenes];
     const errors = [];
-    
+
     try {
       for (let i = 0; i < files.length; i++) {
         setCurrentFileIndex(i);
         setProcessedCount(i);
-        
+
         const file = files[i];
-        
+
         if (file.size > 10 * 1024 * 1024) {
           errors.push(`"${file.name}" es demasiado grande (máx. 10MB)`);
           continue;
@@ -1139,12 +1148,12 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
 
         try {
           console.log(`📸 Procesando: ${file.name} (${(file.size/1024).toFixed(0)}KB)`);
-          
+
           // Verificar que processImage existe
           if (typeof processImage !== 'function') {
             throw new Error('processImage no está disponible. Verifica que imageProcessor.js esté importado correctamente.');
           }
-          
+
           // Timeout de 10 segundos para procesamiento
           const processedBlob = await Promise.race([
             processImage(file, {
@@ -1154,15 +1163,15 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
               maintainRatio: true,
               maxSizeMB: 1
             }),
-            new Promise((_, reject) => 
+            new Promise((_, reject) =>
               setTimeout(() => reject(new Error('Timeout: Procesamiento tardó demasiado')), 10000)
             )
           ]);
-          
+
           if (!processedBlob) {
             throw new Error('processImage retornó un valor nulo o indefinido');
           }
-          
+
           console.log(`✅ Procesada: ${(processedBlob.size/1024).toFixed(0)}KB`);
 
           const fileName = `${habitacion.id}_${Date.now()}_${i}.jpg`;
@@ -1175,7 +1184,7 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
                 upsert: false,
                 contentType: 'image/jpeg'
               }),
-            new Promise((_, reject) => 
+            new Promise((_, reject) =>
               setTimeout(() => reject(new Error('Timeout: Subida tardó demasiado')), 15000)
             )
           ]);
@@ -1196,17 +1205,18 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
             uploadedUrls.push(publicUrl);
             console.log('✅ Imagen subida:', publicUrl);
           }
+
         } catch (processError) {
           console.error(`Error procesando "${file.name}":`, processError);
           const errorMessage = processError?.message || processError?.toString() || 'Error desconocido';
           errors.push(`⚠️ "${file.name}": ${errorMessage}`);
         }
       }
-      
+
       if (errors.length > 0) {
         setErrorMessages(errors);
       }
-      
+
       // Si se subieron imágenes nuevas, actualizar en la base de datos
       if (uploadedUrls.length > imagenes.length) {
         try {
@@ -1216,9 +1226,8 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
               imagenes: uploadedUrls
             })
             .eq('id', habitacion.id);
-          
+
           if (dbError) throw dbError;
-          
           // Actualizar estado local
           setImagenes(uploadedUrls);
           console.log('✅ Imágenes guardadas en base de datos');
@@ -1227,8 +1236,9 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
           setErrorMessages([...errors, `❌ Error al guardar: ${dbErr.message}`]);
         }
       }
-      
+
       return uploadedUrls;
+
     } catch (err) {
       console.error('Error en uploadImages:', err);
       setErrorMessages([...errorMessages, `❌ Error inesperado: ${err.message}`]);
@@ -1247,21 +1257,21 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
     if (uploading || processing) {
       return;
     }
-    
+
     // Si no hay archivos nuevos seleccionados
     if (files.length === 0) {
       alert('⚠️ No hay imágenes nuevas para subir. Selecciona archivos primero.');
       return;
     }
-    
+
     // Subir las nuevas imágenes
     const newImages = await uploadImages();
-    
+
     // Limpiar el input de archivos
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    
+
     // Si se subieron correctamente, cerrar el modal
     if (newImages.length > imagenes.length) {
       alert(`✅ ${newImages.length - imagenes.length} imagen(es) agregada(s) exitosamente`);
@@ -1271,9 +1281,9 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
 
   const removeImage = async (index) => {
     if (!window.confirm('¿Eliminar esta imagen permanentemente?')) return;
-    
+
     const newImages = imagenes.filter((_, i) => i !== index);
-    
+
     try {
       // Actualizar directamente en la base de datos
       const { error } = await supabase
@@ -1282,13 +1292,13 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
           imagenes: newImages
         })
         .eq('id', habitacion.id);
-      
+
       if (error) throw error;
-      
+
       // Actualizar estado local
       setImagenes(newImages);
       alert('✅ Imagen eliminada exitosamente');
-      
+
       // Notificar al componente padre para refrescar
       if (onSave) {
         onSave({
@@ -1296,6 +1306,7 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
           imagenes: newImages
         });
       }
+
     } catch (err) {
       console.error('Error al eliminar imagen:', err);
       alert('❌ Error al eliminar: ' + err.message);
@@ -1312,7 +1323,7 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
         <h2 style={proveedorStyles.modalTitle}>
           🖼️ Imágenes de "{habitacion.nombre || 'Habitación'}"
         </h2>
-        
+
         {/* Nota informativa */}
         <div style={{
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -1327,7 +1338,7 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
             • Para <strong>agregar</strong>: Selecciona archivos y haz clic en "Subir Nueva(s) Imagen(es)"
           </p>
         </div>
-        
+
         {processing && files.length > 0 && (
           <div style={proveedorStyles.progressContainer}>
             <p style={{ color: '#93c5fd', fontSize: 14, margin: '0 0 8px', fontWeight: 'bold' }}>
@@ -1465,7 +1476,6 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
 
         <div style={proveedorStyles.formGroup}>
           <label style={proveedorStyles.formLabel}>Agregar nuevas imágenes</label>
-          
           {/* Input oculto */}
           <input
             ref={fileInputRef}
@@ -1475,7 +1485,6 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
             onChange={handleFileChange}
             style={{ display: 'none' }}
           />
-          
           {/* Área clickeable */}
           <div
             style={{
@@ -1569,7 +1578,7 @@ function EditarImagenesModal({ habitacion, onClose, onSave }) {
             )}
           </button>
         </div>
-        
+
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -1592,14 +1601,17 @@ function EditarPortadaModal({ establecimiento, onClose, onSave }) {
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
+
     if (!selectedFile.type.match('image.*')) {
       alert('Solo se permiten imágenes (JPG, PNG, WEBP, GIF)');
       return;
     }
+
     if (selectedFile.size > 10 * 1024 * 1024) {
       alert('La imagen excede el límite de 10MB');
       return;
     }
+
     setFile(selectedFile);
     setPreviewUrl(URL.createObjectURL(selectedFile));
   };
@@ -1609,11 +1621,13 @@ function EditarPortadaModal({ establecimiento, onClose, onSave }) {
       alert('Por favor selecciona una imagen para subir');
       return;
     }
+
     setUploading(true);
     setProcessing(true);
 
     try {
       console.log(`Procesando portada: ${file.name}`);
+
       const processedBlob = await processImage(file, {
         width: 1920,
         height: 600,
@@ -1621,7 +1635,7 @@ function EditarPortadaModal({ establecimiento, onClose, onSave }) {
         maintainRatio: true,
         maxSizeMB: 2
       });
-      
+
       console.log(`✅ Portada procesada: ${(processedBlob.size/1024).toFixed(0)}KB`);
 
       const fileName = `${establecimiento.id}_cover_${Date.now()}.jpg`;
@@ -1680,6 +1694,7 @@ function EditarPortadaModal({ establecimiento, onClose, onSave }) {
       alert('✅ Portada actualizada exitosamente');
       onSave({ ...establecimiento, cover_image: publicUrl });
       onClose();
+
     } catch (err) {
       console.error('Error procesando portada:', err);
       alert('Error inesperado al procesar portada: ' + err.message);
@@ -1853,7 +1868,7 @@ function EditarPortadaModal({ establecimiento, onClose, onSave }) {
             )}
           </button>
         </div>
-        
+
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -1874,13 +1889,15 @@ function useMisEstablecimientos() {
   const fetch = React.useCallback(async () => {
     if (!currentUser?.id) return;
     setLoading(true);
+
     try {
       const { data: asignaciones, error: asignError } = await supabase
         .from('usuario_establecimientos')
         .select('establecimiento_id')
         .eq('usuario_id', currentUser.id);
-      
+
       if (asignError) throw asignError;
+
       if (!asignaciones || asignaciones.length === 0) {
         setLista([]);
         setLoading(false);
@@ -1888,15 +1905,17 @@ function useMisEstablecimientos() {
       }
 
       const establecimientoIds = asignaciones.map(a => a.establecimiento_id);
+
       const { data, error } = await supabase
         .from('establecimientos')
         .select('id, nombre, tipo, status, cover_image, municipio')
         .in('id', establecimientoIds)
         .eq('status', 'activo')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       setLista(data ?? []);
+
     } catch (err) {
       console.error('❌ Error al cargar establecimientos:', err);
       setLista([]);
@@ -1906,6 +1925,7 @@ function useMisEstablecimientos() {
   }, [currentUser?.id]);
 
   useEffect(() => { fetch(); }, [fetch]);
+
   return { lista, loading, refetch: fetch };
 }
 
@@ -1988,6 +2008,7 @@ export default function ProveedorDashboard() {
               : 'Panel del Proveedor'}
           </h1>
         </div>
+
         <div ref={profileMenuRef} style={proveedorStyles.userMenu}>
           <button
             onClick={() => setProfileMenuOpen(!profileMenuOpen)}
@@ -2007,6 +2028,7 @@ export default function ProveedorDashboard() {
             <UserIcon />
             <span>{currentUser?.alias || 'Proveedor'}</span>
           </button>
+
           {profileMenuOpen && (
             <div style={proveedorStyles.userMenuDropdown}>
               <button onClick={handleSignOut} style={proveedorStyles.signOutButton}>
@@ -2074,11 +2096,11 @@ export default function ProveedorDashboard() {
               {activeTab === 'historial' && (
                 <HistorialCupones establecimientoId={est.id} />
               )}
-              
+
               {activeTab === 'solicitudes' && (
                 <SolicitudesCanje establecimientoId={est.id} />
               )}
-              
+
               {activeTab === 'habitaciones' && (
                 <>
                   {/* Portada con botón de edición - SOLO en tab Habitaciones */}
@@ -2133,7 +2155,7 @@ export default function ProveedorDashboard() {
                       <ImageIcon /> Gestionar Imágenes del Establecimiento
                     </button>
                   </div>
-                  
+
                   <ListaHabitaciones
                     establecimientoId={est.id}
                     establecimientoNombre={est.nombre}

@@ -5,11 +5,14 @@ import { processImage } from '../utils/imageProcessor';
 
 export default function GestorImagenesEstablecimiento({ establecimiento, onClose, onSave }) {
 
-  const [imagenes, setImagenes] = useState(establecimiento.imagenes || []);
+  // ✅ CORRECCIÓN 1: Prefijo _ para setImagenes (no se usa, pero se mantiene por si acaso)
+  const [imagenes, _setImagenes] = useState(establecimiento.imagenes || []);
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processedCount, setProcessedCount] = useState(0);
+  
+  // ✅ CORRECCIÓN 2: errorMessages ahora SÍ se usa en la UI (ver sección de alertas abajo)
   const [errorMessages, setErrorMessages] = useState([]);
   const [dragActive, setDragActive] = useState(false);
 
@@ -34,7 +37,6 @@ export default function GestorImagenesEstablecimiento({ establecimiento, onClose
      VALIDAR ARCHIVOS
   ============================== */
   const validateFiles = (selectedFiles) => {
-
     if (selectedFiles.some(f => !f.type.match('image.*'))) {
       alert('⚠️ Solo se permiten imágenes');
       return false;
@@ -58,7 +60,7 @@ export default function GestorImagenesEstablecimiento({ establecimiento, onClose
     if (!validateFiles(selectedFiles)) return;
 
     setFiles(selectedFiles);
-    setErrorMessages([]);
+    setErrorMessages([]); // ✅ Limpia errores al seleccionar nuevos archivos
   };
 
   /* ==============================
@@ -89,18 +91,17 @@ export default function GestorImagenesEstablecimiento({ establecimiento, onClose
      SUBIR IMÁGENES
   ============================== */
   const uploadImages = async () => {
-
     if (!files.length) return imagenes;
 
     setUploading(true);
     setProcessing(true);
     setProcessedCount(0);
+    setErrorMessages([]); // ✅ Limpia errores anteriores al iniciar
 
     const uploadedUrls = [...imagenes];
 
     try {
       for (let i = 0; i < files.length; i++) {
-
         const file = files[i];
         setProcessedCount(i + 1);
 
@@ -138,6 +139,8 @@ export default function GestorImagenesEstablecimiento({ establecimiento, onClose
       return uploadedUrls;
 
     } catch (err) {
+      // ✅ Agrega el error al estado en lugar de solo alert()
+      setErrorMessages(prev => [...prev, `❌ Error: ${err.message}`]);
       alert("❌ Error al subir imágenes: " + err.message);
       return imagenes;
     } finally {
@@ -152,6 +155,13 @@ export default function GestorImagenesEstablecimiento({ establecimiento, onClose
      GUARDAR
   ============================== */
   const handleSave = async () => {
+    // ✅ Si hay errores, no permitir guardar
+    if (errorMessages.length > 0) {
+      const confirmSave = window.confirm(
+        `⚠️ Tienes ${errorMessages.length} error(es). ¿Deseas guardar igualmente?`
+      );
+      if (!confirmSave) return;
+    }
 
     const newImages = await uploadImages();
 
@@ -200,6 +210,41 @@ export default function GestorImagenesEstablecimiento({ establecimiento, onClose
         <h2 style={{ marginBottom: 20 }}>
           🖼️ Imágenes de "{establecimiento.nombre}"
         </h2>
+
+        {/* ✅ CORRECCIÓN 3: Mostrar errores si existen */}
+        {errorMessages.length > 0 && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid #EF4444',
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 15,
+            color: '#FCA5A5',
+            fontSize: 14
+          }}>
+            <strong>⚠️ Errores:</strong>
+            <ul style={{ margin: '8px 0 0 20px', padding: 0 }}>
+              {errorMessages.map((msg, idx) => (
+                <li key={idx}>{msg}</li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setErrorMessages([])}
+              style={{
+                marginTop: 8,
+                background: 'transparent',
+                border: '1px solid #EF4444',
+                color: '#FCA5A5',
+                padding: '4px 12px',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontSize: 12
+              }}
+            >
+              ✕ Descartar errores
+            </button>
+          </div>
+        )}
 
         {/* ZONA DROP */}
         <div
@@ -250,12 +295,14 @@ export default function GestorImagenesEstablecimiento({ establecimiento, onClose
         <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
           <button
             onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || processing}
           >
             📂 Seleccionar
           </button>
 
           <button
             onClick={() => cameraInputRef.current?.click()}
+            disabled={uploading || processing}
           >
             📸 Tomar fotografía
           </button>
@@ -266,10 +313,21 @@ export default function GestorImagenesEstablecimiento({ establecimiento, onClose
           <button
             disabled={uploading || processing}
             onClick={handleSave}
+            style={{
+              background: uploading || processing ? '#6B7280' : '#10B981',
+              color: 'white',
+              padding: '10px 24px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: uploading || processing ? 'not-allowed' : 'pointer',
+              fontWeight: 600
+            }}
           >
             {processing
-              ? `Procesando ${processedCount}/${files.length}`
-              : 'Guardar Cambios'}
+              ? `🔄 Procesando ${processedCount}/${files.length}`
+              : uploading
+                ? '⏳ Subiendo...'
+                : '💾 Guardar Cambios'}
           </button>
         </div>
       </div>
