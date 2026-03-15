@@ -1,5 +1,5 @@
 // src/screens/MisCupones.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,15 +11,9 @@ export default function MisCupones() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('activos');
 
-  useEffect(() => {
-    if (!currentUser) {
-      navigate('/login');
-      return;
-    }
-    fetchCupones();
-  }, [currentUser, navigate]);
+  const fetchCupones = useCallback(async () => {
+    if (!currentUser) return;
 
-  const fetchCupones = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -75,15 +69,25 @@ export default function MisCupones() {
       setCupones(cuponesConDetalles);
     } catch (err) {
       console.error('Error al cargar cupones:', err);
-      alert('Error al cargar tus cupones. Verifica tu conexión.');
+      alert('💎 No pudimos cargar tus cupones en este momento. Por favor, verifica tu conexión o inténtalo más tarde.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]); // ✅ Ahora incluye currentUser completo
+
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+    fetchCupones();
+  }, [currentUser, navigate, fetchCupones]);
 
   const handleSolicitarRedencion = async (cupon) => {
+    if (!currentUser) return;
+
     if (cupon.redeemed_at) {
-      alert('Este cupón ya fue canjeado.');
+      alert('🎟️ Este cupón ya fue canjeado. ¡Gracias por confiar en LaClave!');
       return;
     }
 
@@ -102,11 +106,11 @@ export default function MisCupones() {
 
       if (error) throw error;
 
-      alert('✅ Solicitud enviada. El establecimiento la revisará pronto.');
+      alert('📬 Solicitud de canje enviada. El establecimiento la revisará pronto.');
       fetchCupones();
     } catch (err) {
       console.error('Error al solicitar redención:', err);
-      alert('Error al enviar la solicitud. Intenta de nuevo.');
+      alert('🛠️ No pudimos enviar tu solicitud de canje. Por favor, inténtalo de nuevo.');
     }
   };
 

@@ -1,5 +1,5 @@
 // src/screens/AdminDashboard.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,14 +8,10 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-
+import AdminRolesScreen from './AdminRolesScreen';
 // ------------------------------------------------------------------
 // Iconos
 // ------------------------------------------------------------------
-const BackIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
-);
 const UserIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -25,9 +21,19 @@ const UserIcon = () => (
 // Error Boundary improvisado
 // ------------------------------------------------------------------
 class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-  static getDerivedStateFromError(error) { return { hasError: true, error }; }
-  componentDidCatch(error, errorInfo) { console.error('❌ ErrorBoundary:', error, errorInfo); }
+  constructor(props) { 
+    super(props); 
+    this.state = { hasError: false, error: null }; 
+  }
+  
+  static getDerivedStateFromError(error) { 
+    return { hasError: true, error }; 
+  }
+  
+  componentDidCatch(error, errorInfo) { 
+    console.error('❌ ErrorBoundary:', error, errorInfo); 
+  }
+  
   render() {
     if (this.state.hasError) {
       return (
@@ -99,7 +105,14 @@ function FormularioUsuario({ initial, onSave, onCancel }) {
       setStatus(initial.status ?? 'activo');
       setPassword('');
     } else {
-      setEmail(''); setPassword(''); setNombre(''); setApellido(''); setAlias(''); setTelefono(''); setRol('cliente'); setStatus('activo');
+      setEmail(''); 
+      setPassword(''); 
+      setNombre(''); 
+      setApellido(''); 
+      setAlias(''); 
+      setTelefono(''); 
+      setRol('cliente'); 
+      setStatus('activo');
     }
   }, [initial]);
 
@@ -287,7 +300,7 @@ function ListaUsuariosProveedores({ user }) {
 }
 
 // ------------------------------------------------------------------
-// Dashboard de estadísticas (sin cambios)
+// Dashboard de estadísticas (corregido)
 // ------------------------------------------------------------------
 function DashboardHome() {
   const [stats, setStats] = useState({ usuarios: 0, cuponesVendidos: 0, ingresos: 0, establecimientos: 0 });
@@ -304,33 +317,49 @@ function DashboardHome() {
           supabase.from('cupones').select('precio_cupon, redeemed_at').eq('status', 'sold'),
           supabase.from('establecimientos').select('*', { count: 'exact', head: true }).eq('status', 'activo')
         ]);
+        
         const cuponesVendidos = vendidos?.length || 0;
         const ingresos = vendidos?.reduce((a, c) => a + c.precio_cupon, 0) || 0;
+        
         const ventasPorMes = {};
         vendidos?.forEach(v => {
           const mes = new Date(v.redeemed_at).toLocaleDateString('es-MX', { month: 'short', year: 'numeric' });
           ventasPorMes[mes] = (ventasPorMes[mes] || 0) + v.precio_cupon;
         });
+        
         const ventasMensuales = Object.entries(ventasPorMes).map(([mes, total]) => ({ mes, total }));
+        
         const { data: topEstData } = await supabase.from('cupones').select('establecimiento_id, establecimientos(nombre)').eq('status', 'sold');
+        
         const countMap = topEstData?.reduce((a, c) => {
           a[c.establecimiento_id] = (a[c.establecimiento_id] || 0) + 1;
           return a;
         }, {});
+        
         const topEstablecimientos = Object.entries(countMap || {})
           .map(([id, ventas]) => ({
-            nombre: topEstData.find(e => e.establecimiento_id === id)?.establecimientos?.nombre || 'Desconocido',
+            nombre: topEstData?.find(e => e.establecimiento_id === id)?.establecimientos?.nombre || 'Desconocido',
             ventas
           }))
           .sort((a, b) => b.ventas - a.ventas)
           .slice(0, 5);
+        
         const { data: tiposData } = await supabase.from('establecimientos').select('tipo').eq('status', 'activo');
+        
         const tipoCount = tiposData?.reduce((a, e) => {
           a[e.tipo] = (a[e.tipo] || 0) + 1;
           return a;
         }, {});
+        
         const distribucionTipos = Object.entries(tipoCount || {}).map(([name, value]) => ({ name, value }));
-        setStats({ usuarios: usuarios || 0, cuponesVendidos, ingresos, establecimientos: establecimientos || 0 });
+        
+        setStats({ 
+          usuarios: usuarios || 0, 
+          cuponesVendidos, 
+          ingresos, 
+          establecimientos: establecimientos || 0 
+        });
+        
         setVentasMensuales(ventasMensuales.length ? ventasMensuales : [{ mes: 'Sin datos', total: 0 }]);
         setTopEstablecimientos(topEstablecimientos);
         setDistribucionTipos(distribucionTipos);
@@ -339,12 +368,14 @@ function DashboardHome() {
         setStats({ usuarios: 0, cuponesVendidos: 0, ingresos: 0, establecimientos: 0 });
       }
     };
+    
     fetch();
   }, []);
 
   return (
     <div>
       <h2 style={{ fontSize: 32, fontWeight: 'bold', color: 'white', marginBottom: 40 }}>Dashboard de Ventas</h2>
+      
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24, marginBottom: 48 }}>
         {[
           { label: 'Usuarios', value: stats.usuarios, color: '#8B5CF6' },
@@ -358,6 +389,7 @@ function DashboardHome() {
           </div>
         ))}
       </div>
+      
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 48 }}>
         <div style={adminStyles.chartContainer}>
           <h3 style={{ color: colors.primary, margin: '0 0 20px' }}>Ventas Mensuales</h3>
@@ -371,6 +403,7 @@ function DashboardHome() {
             </LineChart>
           </ResponsiveContainer>
         </div>
+        
         <div style={adminStyles.chartContainer}>
           <h3 style={{ color: colors.primary, margin: '0 0 20px' }}>Top Establecimientos</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -384,11 +417,20 @@ function DashboardHome() {
           </ResponsiveContainer>
         </div>
       </div>
+      
       <div style={{ ...adminStyles.chartContainer, maxWidth: 600, margin: '0 auto' }}>
         <h3 style={{ color: colors.primary, margin: '0 0 20px', textAlign: 'center' }}>Distribución por Tipo</h3>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
-            <Pie data={distribucionTipos} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+            <Pie 
+              data={distribucionTipos} 
+              dataKey="value" 
+              nameKey="name" 
+              cx="50%" 
+              cy="50%" 
+              outerRadius={100} 
+              label
+            >
               {distribucionTipos.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
@@ -402,7 +444,7 @@ function DashboardHome() {
 }
 
 // ------------------------------------------------------------------
-// Cupones (sin cambios respecto a tu última versión)
+// Cupones (corregido con useCallback)
 // ------------------------------------------------------------------
 function GestionCupones() {
   const [activeTab, setActiveTab] = useState('listado');
@@ -420,27 +462,26 @@ function GestionCupones() {
   const [cantidadPorHabitacion, setCantidadPorHabitacion] = useState({});
   const [generando, setGenerando] = useState(false);
 
-  useEffect(() => {
-    if (activeTab === 'listado') fetchCupones();
-    if (activeTab === 'generar') fetchEstablecimientos();
-  }, [activeTab, tipoEstablecimiento]);
-
-  const fetchCupones = async () => {
+  const fetchCupones = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.from('cupones').select('*').order('created_at', { ascending: false });
       if (error) throw error;
+      
       const estIds = [...new Set(data.map(c => c.establecimiento_id).filter(Boolean))];
       const habIds = [...new Set(data.map(c => c.habitacion_id).filter(Boolean))];
+      
       const [{ data: ests }, { data: habs }] = await Promise.all([
         estIds.length ? supabase.from('establecimientos').select('id, nombre, tipo').in('id', estIds) : Promise.resolve({ data: [] }),
         habIds.length ? supabase.from('habitaciones').select('id, nombre').in('id', habIds) : Promise.resolve({ data: [] })
       ]);
+      
       const completos = data.map(c => ({
         ...c,
         establecimientos: ests?.find(e => e.id === c.establecimiento_id) || { nombre: 'Sin asignar', tipo: 'N/A' },
         habitaciones: habs?.find(h => h.id === c.habitacion_id) || { nombre: 'Sin asignar' }
       }));
+      
       setCupones(completos);
     } catch (err) {
       console.error(err);
@@ -448,9 +489,9 @@ function GestionCupones() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchEstablecimientos = async () => {
+  const fetchEstablecimientos = useCallback(async () => {
     setLoading(true);
     try {
       const { data: ests, error } = await supabase
@@ -459,8 +500,10 @@ function GestionCupones() {
         .eq('tipo', tipoEstablecimiento)
         .eq('status', 'activo')
         .order('nombre');
+      
       if (error) throw error;
       setEstablecimientos(ests || []);
+      
       const map = {};
       if (ests?.length) {
         const { data: rooms } = await supabase
@@ -468,11 +511,13 @@ function GestionCupones() {
           .select('id, establecimiento_id, nombre, precio')
           .in('establecimiento_id', ests.map(e => e.id))
           .order('nombre');
+        
         rooms?.forEach(r => {
           if (!map[r.establecimiento_id]) map[r.establecimiento_id] = [];
           map[r.establecimiento_id].push(r);
         });
       }
+      
       setHabitacionesPorEst(map);
     } catch (err) {
       console.error(err);
@@ -480,7 +525,12 @@ function GestionCupones() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tipoEstablecimiento]);
+
+  useEffect(() => {
+    if (activeTab === 'listado') fetchCupones();
+    if (activeTab === 'generar') fetchEstablecimientos();
+  }, [activeTab, tipoEstablecimiento, fetchCupones, fetchEstablecimientos]);
 
   const cuponesFiltrados = React.useMemo(() => {
     return cupones.filter(c => {
@@ -513,10 +563,12 @@ function GestionCupones() {
           updated_at: new Date().toISOString()
         })
         .eq('id', editingCupon.id);
+      
       setShowEditForm(false);
       fetchCupones();
     } catch (err) {
       console.error(err);
+      alert('Error al actualizar cupón');
     } finally {
       setFormLoading(false);
     }
@@ -529,100 +581,100 @@ function GestionCupones() {
       fetchCupones();
     } catch (err) {
       console.error(err);
+      alert('Error al eliminar cupón');
     }
   };
 
-const generarCuponesMasivos = async () => {
-  // 1. Validar entradas temprano
-  const validEntries = Object.entries(cantidadPorHabitacion).filter(([, qty]) => qty > 0);
-  const totalCupones = validEntries.reduce((sum, [, qty]) => sum + qty, 0);
-  if (totalCupones === 0) {
-    alert('⚠️ Por favor, ingresa al menos una cantidad mayor a 0.');
-    return;
-  }
-  if (!window.confirm(`¿Estás seguro de generar ${totalCupones} cupones?`)) return;
-
-  setGenerando(true);
-
-  try {
-    // 2. ✅ Precomputar mapa: habitacionId → { establecimientoId, nombre, precio }
-    const habitacionMap = {};
-    for (const [estId, habitaciones] of Object.entries(habitacionesPorEst)) {
-      if (Array.isArray(habitaciones)) {
-        habitaciones.forEach(hab => {
-          habitacionMap[hab.id] = {
-            establecimiento_id: estId,
-            nombre_cupon: hab.nombre,
-            precio_cupon: hab.precio
-          };
-        });
-      }
-    }
-
-    // 3. ✅ Validar inmediatamente si hay habitaciones válidas
-    const validHabitaciones = validEntries.filter(([habId]) => habitacionMap[habId]);
-    if (validHabitaciones.length === 0) {
-      alert('❌ Ninguna de las habitaciones seleccionadas tiene un establecimiento asociado.');
-      setGenerando(false);
+  const generarCuponesMasivos = async () => {
+    const validEntries = Object.entries(cantidadPorHabitacion).filter(([, qty]) => qty > 0);
+    const totalCupones = validEntries.reduce((sum, [, qty]) => sum + qty, 0);
+    
+    if (totalCupones === 0) {
+      alert('⚠️ Por favor, ingresa al menos una cantidad mayor a 0.');
       return;
     }
+    
+    if (!window.confirm(`¿Estás seguro de generar ${totalCupones} cupones?`)) return;
 
-    const hoy = new Date();
-    const fin = new Date(hoy);
-    fin.setDate(hoy.getDate() + 30);
+    setGenerando(true);
 
-    // 4. ✅ Generar batch usando el mapa (rápido y directo)
-    const batch = [];
-    for (const [habId, cantidad] of validHabitaciones) {
-      const habData = habitacionMap[habId];
-      for (let i = 0; i < cantidad; i++) {
-        const uniqueId = 'LA' + crypto.randomUUID().substring(0, 24).toUpperCase().replace(/-/g, '');
-        const codigo = 'LA' + crypto.randomUUID().substring(0, 8).toUpperCase().replace(/-/g, '');
-        batch.push({
-          id: uniqueId,
-          establecimiento_id: habData.establecimiento_id,
-          habitacion_id: habId,
-          nombre_cupon: habData.nombre_cupon,
-          precio_cupon: habData.precio_cupon,
-          validity_start: hoy.toISOString().split('T')[0],
-          validity_end: fin.toISOString().split('T')[0],
-          status: 'onSale',
-          codigo_redencion: codigo
-        });
+    try {
+      const habitacionMap = {};
+      for (const [estId, habitaciones] of Object.entries(habitacionesPorEst)) {
+        if (Array.isArray(habitaciones)) {
+          habitaciones.forEach(hab => {
+            habitacionMap[hab.id] = {
+              establecimiento_id: estId,
+              nombre_cupon: hab.nombre,
+              precio_cupon: hab.precio
+            };
+          });
+        }
       }
-    }
 
-    // 5. Insertar en lotes
-    if (batch.length === 0) {
-      alert('❌ No se generó ningún cupón válido.');
+      const validHabitaciones = validEntries.filter(([habId]) => habitacionMap[habId]);
+      if (validHabitaciones.length === 0) {
+        alert('❌ Ninguna de las habitaciones seleccionadas tiene un establecimiento asociado.');
+        setGenerando(false);
+        return;
+      }
+
+      const hoy = new Date();
+      const fin = new Date(hoy);
+      fin.setDate(hoy.getDate() + 30);
+
+      const batch = [];
+      for (const [habId, cantidad] of validHabitaciones) {
+        const habData = habitacionMap[habId];
+        for (let i = 0; i < cantidad; i++) {
+          const uniqueId = 'LA' + crypto.randomUUID().substring(0, 24).toUpperCase().replace(/-/g, '');
+          const codigo = 'LA' + crypto.randomUUID().substring(0, 8).toUpperCase().replace(/-/g, '');
+          
+          batch.push({
+            id: uniqueId,
+            establecimiento_id: habData.establecimiento_id,
+            habitacion_id: habId,
+            nombre_cupon: habData.nombre_cupon,
+            precio_cupon: habData.precio_cupon,
+            validity_start: hoy.toISOString().split('T')[0],
+            validity_end: fin.toISOString().split('T')[0],
+            status: 'onSale',
+            codigo_redencion: codigo
+          });
+        }
+      }
+
+      if (batch.length === 0) {
+        alert('❌ No se generó ningún cupón válido.');
+        setGenerando(false);
+        return;
+      }
+
+      const BATCH_SIZE = 100;
+      let cuponesCreados = 0;
+      
+      for (let i = 0; i < batch.length; i += BATCH_SIZE) {
+        const chunk = batch.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase.from('cupones').insert(chunk);
+        if (error) {
+          console.error('Error al insertar lote:', error);
+          throw new Error(`Fallo en inserción: ${error.message}`);
+        }
+        cuponesCreados += chunk.length;
+      }
+
+      alert(`✅ ¡${cuponesCreados} cupones creados exitosamente!`);
+      setCantidadPorHabitacion({});
+      setActiveTab('listado');
+      fetchCupones();
+
+    } catch (err) {
+      console.error('Error en generación masiva:', err);
+      alert(`❌ Error: ${err.message}`);
+    } finally {
       setGenerando(false);
-      return;
     }
-
-    const BATCH_SIZE = 100;
-    let cuponesCreados = 0;
-    for (let i = 0; i < batch.length; i += BATCH_SIZE) {
-      const chunk = batch.slice(i, i + BATCH_SIZE);
-      const { error } = await supabase.from('cupones').insert(chunk);
-      if (error) {
-        console.error('Error al insertar lote:', error);
-        throw new Error(`Fallo en inserción: ${error.message}`);
-      }
-      cuponesCreados += chunk.length;
-    }
-
-    alert(`✅ ¡${cuponesCreados} cupones creados exitosamente!`);
-    setCantidadPorHabitacion({});
-    setActiveTab('listado');
-    fetchCupones();
-
-  } catch (err) {
-    console.error('Error en generación masiva:', err);
-    alert(`❌ Error: ${err.message}`);
-  } finally {
-    setGenerando(false); // ← ¡Esto siempre se ejecuta!
-  }
-};
+  };
 
   return (
     <div>
@@ -893,7 +945,7 @@ const generarCuponesMasivos = async () => {
 }
 
 // ------------------------------------------------------------------
-// Establecimientos (sin cambios respecto a tu última versión)
+// Establecimientos (completo)
 // ------------------------------------------------------------------
 function ListaEstablecimientos() {
   const [establecimientos, setEstablecimientos] = useState([]);
@@ -1006,11 +1058,13 @@ function ListaEstablecimientos() {
   };
 
   const addHabitacion = () => setHabitaciones([...habitaciones, { nombre: '', capacidad: 2, precio: 0 }]);
+  
   const updateHabitacion = (index, field, value) => {
     const newHabs = [...habitaciones];
     newHabs[index][field] = value;
     setHabitaciones(newHabs);
   };
+  
   const removeHabitacion = (index) => setHabitaciones(habitaciones.filter((_, i) => i !== index));
 
   const deleteEstablecimiento = async (id, nombre) => {
@@ -1021,6 +1075,7 @@ function ListaEstablecimientos() {
       fetchEstablecimientos();
     } catch (err) {
       console.error(err);
+      alert('Error al eliminar establecimiento');
     }
   };
 
@@ -1028,6 +1083,7 @@ function ListaEstablecimientos() {
     e.preventDefault();
     setFormLoading(true);
     let finalCoverUrl = cover_image;
+    
     if (file) {
       finalCoverUrl = await uploadCoverImage();
       if (!finalCoverUrl) {
@@ -1035,7 +1091,9 @@ function ListaEstablecimientos() {
         return;
       }
     }
+    
     const coords = lat && lng ? { latitude: parseFloat(lat), longitude: parseFloat(lng) } : null;
+    
     try {
       if (isEditing) {
         await supabase
@@ -1054,7 +1112,9 @@ function ListaEstablecimientos() {
             updated_at: new Date().toISOString()
           })
           .eq('id', currentId);
+        
         await supabase.from('habitaciones').delete().eq('establecimiento_id', currentId);
+        
         if (habitaciones.length > 0) {
           const roomInserts = habitaciones.map((h, i) => ({
             id: `${currentId}_room_${String(i + 1).padStart(3, '0')}`,
@@ -1070,7 +1130,8 @@ function ListaEstablecimientos() {
         const tipoPrefix = { motel: 'm', bar: 'b', nightclub: 'n', tabledance: 't' };
         const prefix = tipoPrefix[tipo] || 'x';
         const nextId = `${prefix}${establecimientos.filter(e => e.tipo === tipo).length + 1}`;
-        const { data: estData, error: estError } = await supabase
+        
+        const { error: estError } = await supabase
           .from('establecimientos')
           .insert({
             id: nextId,
@@ -1090,7 +1151,9 @@ function ListaEstablecimientos() {
           })
           .select()
           .single();
+        
         if (estError) throw estError;
+        
         if (habitaciones.length > 0) {
           const roomInserts = habitaciones.map((h, i) => ({
             id: `${nextId}_room_${String(i + 1).padStart(3, '0')}`,
@@ -1103,10 +1166,12 @@ function ListaEstablecimientos() {
           await supabase.from('habitaciones').insert(roomInserts);
         }
       }
+      
       resetForm();
       fetchEstablecimientos();
     } catch (err) {
       console.error(err);
+      alert('Error al guardar establecimiento');
     } finally {
       setFormLoading(false);
     }
@@ -1158,6 +1223,7 @@ function ListaEstablecimientos() {
             <input type="text" placeholder="Municipio" value={municipio} onChange={e => setMunicipio(e.target.value)} style={globalStyles.input} />
             <input type="text" placeholder="Estado" value={estado} onChange={e => setEstado(e.target.value)} style={globalStyles.input} />
             <input type="tel" placeholder="Teléfono" value={telefono} onChange={e => setTelefono(e.target.value)} style={globalStyles.input} />
+            
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', color: colors.text, marginBottom: 6 }}>Imagen de portada</label>
               <input type="file" accept="image/*" onChange={handleFileChange} style={{ marginBottom: 8 }} />
@@ -1165,14 +1231,17 @@ function ListaEstablecimientos() {
                 <img src={previewUrl || cover_image} alt="Preview" style={{ width: '100%', maxWidth: 200, borderRadius: 8 }} />
               )}
             </div>
+            
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <input type="text" placeholder="Latitud" value={lat} onChange={e => setLat(e.target.value)} style={globalStyles.input} />
               <input type="text" placeholder="Longitud" value={lng} onChange={e => setLng(e.target.value)} style={globalStyles.input} />
             </div>
+            
             <select value={ownerId} onChange={e => setOwnerId(e.target.value)} style={globalStyles.input}>
               <option value="">Sin proveedor</option>
               {proveedores.map(p => <option key={p.id} value={p.id}>{p.alias}</option>)}
             </select>
+            
             <h3 style={{ color: 'white', margin: '20px 0 12px' }}>Habitaciones</h3>
             {habitaciones.map((h, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 100px 40px', gap: 8, marginBottom: 12 }}>
@@ -1182,9 +1251,11 @@ function ListaEstablecimientos() {
                 <button type="button" onClick={() => removeHabitacion(i)} style={{ background: '#EF4444', color: 'white', border: 'none', borderRadius: 4, fontSize: 16 }}>✕</button>
               </div>
             ))}
+            
             <button type="button" onClick={addHabitacion} style={{ ...globalStyles.button, backgroundColor: '#EC4899', fontSize: 14, padding: '6px 12px', marginBottom: 16 }}>
               + Agregar Habitación
             </button>
+            
             <div style={{ ...adminStyles.gap12 }}>
               <button type="submit" disabled={formLoading} style={{ ...globalStyles.button, backgroundColor: formLoading ? '#6B7280' : colors.primary, flex: 1 }}>
                 {formLoading ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
@@ -1229,7 +1300,7 @@ function ListaEstablecimientos() {
 }
 
 // ------------------------------------------------------------------
-// Dashboard principal
+// Dashboard principal (corregido)
 // ------------------------------------------------------------------
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -1244,13 +1315,7 @@ export default function AdminDashboard() {
       navigate('/');
       return;
     }
-    fetchAllData();
   }, [user, userMetadata, navigate]);
-
-  const [stats, setStats] = useState({ usuarios: 0, cuponesVendidos: 0, ingresos: 0, establecimientos: 0 });
-  const [ventasMensuales, setVentasMensuales] = useState([]);
-  const [topEstablecimientos, setTopEstablecimientos] = useState([]);
-  const [distribucionTipos, setDistribucionTipos] = useState([]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -1259,55 +1324,6 @@ export default function AdminDashboard() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const fetchAllData = async () => {
-    try {
-      const [{ count: usuarios }, { data: cuponesVendidosData }, { count: establecimientos }] = await Promise.all([
-        supabase.from('usuarios').select('id', { count: 'exact', head: true }).eq('rol', 'cliente'),
-        supabase.from('cupones').select('precio_cupon, redeemed_at').eq('status', 'sold'),
-        supabase.from('establecimientos').select('*', { count: 'exact', head: true }).eq('status', 'activo')
-      ]);
-      const cuponesVendidos = cuponesVendidosData?.length || 0;
-      const ingresos = cuponesVendidosData?.reduce((acc, c) => acc + c.precio_cupon, 0) || 0;
-      const ventasPorMes = {};
-      cuponesVendidosData?.forEach(v => {
-        const mes = new Date(v.redeemed_at).toLocaleDateString('es-MX', { month: 'short', year: 'numeric' });
-        ventasPorMes[mes] = (ventasPorMes[mes] || 0) + v.precio_cupon;
-      });
-      const ventasMensuales = Object.entries(ventasPorMes).map(([mes, total]) => ({ mes, total }));
-      const { data: topEstData } = await supabase
-        .from('cupones')
-        .select('establecimiento_id, establecimientos(nombre)')
-        .eq('status', 'sold');
-      const countMap = topEstData?.reduce((acc, c) => {
-        acc[c.establecimiento_id] = (acc[c.establecimiento_id] || 0) + 1;
-        return acc;
-      }, {});
-      const topEstablecimientos = Object.entries(countMap || {})
-        .map(([id, ventas]) => ({
-          nombre: topEstData.find(e => e.establecimiento_id === id)?.establecimientos?.nombre || 'Desconocido',
-          ventas
-        }))
-        .sort((a, b) => b.ventas - a.ventas)
-        .slice(0, 5);
-      const { data: tiposData } = await supabase
-        .from('establecimientos')
-        .select('tipo')
-        .eq('status', 'activo');
-      const tipoCount = tiposData?.reduce((a, e) => {
-        a[e.tipo] = (a[e.tipo] || 0) + 1;
-        return a;
-      }, {});
-      const distribucionTipos = Object.entries(tipoCount || {}).map(([name, value]) => ({ name, value }));
-      setStats({ usuarios: usuarios || 0, cuponesVendidos, ingresos, establecimientos: establecimientos || 0 });
-      setVentasMensuales(ventasMensuales.length > 0 ? ventasMensuales : [{ mes: 'Sin datos', total: 0 }]);
-      setTopEstablecimientos(topEstablecimientos);
-      setDistribucionTipos(distribucionTipos);
-    } catch (err) {
-      console.error(err);
-      setStats({ usuarios: 0, cuponesVendidos: 0, ingresos: 0, establecimientos: 0 });
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -1318,10 +1334,9 @@ export default function AdminDashboard() {
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'establecimientos', label: 'Establecimientos', icon: '🏨' },
     { id: 'usuarios', label: 'Usuarios / Proveedores', icon: '👥' },
-    { id: 'cupones', label: 'Cupones', icon: '🎟️' }
-  ];
-
-  const COLORS = ['#C084FC', '#EC4899', '#10B981', '#F59E0B', '#8B5CF6', '#3B82F6'];
+    { id: 'cupones', label: 'Cupones', icon: '🎟️' },
+    { id: 'roles', label: 'Roles y Permisos', icon: '🎭' }
+];
 
   return (
     <div style={adminStyles.adminContainer}>
@@ -1330,13 +1345,44 @@ export default function AdminDashboard() {
           <h1 style={{ fontSize: 22, fontWeight: 'bold', color: colors.primary, margin: 0 }}>Admin Panel</h1>
         </div>
         <div ref={userMenuRef} style={{ position: 'relative' }}>
-          <button onClick={() => setShowUserMenu(!showUserMenu)} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(192,132,252,0.15)', padding: '8px 16px', borderRadius: 20, border: `1px solid ${colors.border}`, color: colors.primary, cursor: 'pointer', fontWeight: 'bold' }}>
+          <button onClick={() => setShowUserMenu(!showUserMenu)} style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 10, 
+            background: 'rgba(192,132,252,0.15)', 
+            padding: '8px 16px', 
+            borderRadius: 20, 
+            border: `1px solid ${colors.border}`, 
+            color: colors.primary, 
+            cursor: 'pointer', 
+            fontWeight: 'bold' 
+          }}>
             <UserIcon />
             <span>{userMetadata?.alias || 'Admin'}</span>
           </button>
           {showUserMenu && (
-            <div style={{ position: 'absolute', top: 60, right: 0, background: '#1a1a2e', borderRadius: 16, padding: '12px 0', minWidth: 200, boxShadow: '0 15px 40px rgba(0,0,0,0.6)', border: `1px solid ${colors.border}` }}>
-              <button onClick={handleSignOut} style={{ width: '100%', textAlign: 'left', padding: '12px 24px', background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontWeight: 'bold' }}>
+            <div style={{ 
+              position: 'absolute', 
+              top: 60, 
+              right: 0, 
+              background: '#1a1a2e', 
+              borderRadius: 16, 
+              padding: '12px 0', 
+              minWidth: 200, 
+              boxShadow: '0 15px 40px rgba(0,0,0,0.6)', 
+              border: `1px solid ${colors.border}`,
+              zIndex: 1000
+            }}>
+              <button onClick={handleSignOut} style={{ 
+                width: '100%', 
+                textAlign: 'left', 
+                padding: '12px 24px', 
+                background: 'none', 
+                border: 'none', 
+                color: '#EF4444', 
+                cursor: 'pointer', 
+                fontWeight: 'bold' 
+              }}>
                 Cerrar Sesión
               </button>
             </div>
@@ -1391,6 +1437,11 @@ export default function AdminDashboard() {
           {activeModule === 'cupones' && (
             <ErrorBoundary>
               <GestionCupones />
+            </ErrorBoundary>
+          )}
+          {activeModule === 'roles' && (
+            <ErrorBoundary>
+              <AdminRolesScreen />
             </ErrorBoundary>
           )}
         </main>

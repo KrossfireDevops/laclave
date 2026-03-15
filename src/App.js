@@ -1,17 +1,25 @@
 // src/App.js
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+// Pantallas existentes
 import PublicHome from './screens/PublicHome';
 import ProveedorDashboard from './screens/ProveedorDashboard';
 import MisCupones from './screens/MisCupones';
-import ProtectedRoute from './components/ProtectedRoute';
-import AuthCallback from './screens/AuthCallback';
-import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
-import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import MotelDetail from './screens/MotelDetail';
 import AdminDashboard from './screens/AdminDashboard';
 import CuponesMarketplace from './screens/CuponesMarketplace';
 import Carrito from './screens/Carrito';
+import AuthCallback from './screens/AuthCallback';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
+import ResetPasswordScreen from './screens/ResetPasswordScreen';
+
+// NUEVAS PANTALLAS RBAC
+import AdminRolesScreen from './screens/AdminRolesScreen'; // ✅ NUEVO
+
+// Componentes de protección
+import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRouteWithPermisos from './components/ProtectedRouteWithPermisos'; // ✅ NUEVO
 
 // ✅ Componente de redirección inteligente
 function HomeRedirect() {
@@ -46,17 +54,14 @@ function HomeRedirect() {
     );
   }
 
-  // ✅ Redirección automática para Admnistradores
   if (currentUser && role === 'admin') {
     return <Navigate to="/admin" replace />;
   }
 
-  // ✅ Redirección automática para proveedores
   if (currentUser && role === 'proveedor') {
     return <Navigate to="/proveedor" replace />;
   }
 
-  // Público o cliente
   return <PublicHome />;
 }
 
@@ -65,21 +70,36 @@ export default function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* 🔁 Ruta raíz con redirección inteligente */}
+          {/* ======================================== */}
+          {/* RUTAS PÚBLICAS */}
+          {/* ======================================== */}
+          
+          {/* Ruta raíz */}
           <Route path="/" element={<HomeRedirect />} />
           
-          {/* 🔹 Rutas públicas */}
+          {/* Detalle de motel y marketplace */}
           <Route path="/motel/:id" element={<MotelDetail />} />
           <Route path="/cupones" element={<CuponesMarketplace />} />
 
-          {/* 🆕 Rutas de recuperación */}
+          {/* ======================================== */}
+          {/* AUTENTICACIÓN Y RECUPERACIÓN */}
+          {/* ======================================== */}
+          
+          {/* Callback OAuth */}
+          <Route path="/auth/callback" element={<AuthCallback />} />
+
+          {/* Recuperación de contraseña */}
           <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
           <Route path="/reset-password" element={<ResetPasswordScreen />} />
 
-          {/* 🔹 Callback OAuth */}
-          <Route path="/auth/callback" element={<AuthCallback />} />
+          {/* Redirecciones de login/register (opcional) */}
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="/register" element={<Navigate to="/" replace />} />
 
-          {/* 🔹 Rutas protegidas */}
+          {/* ======================================== */}
+          {/* RUTAS PROTEGIDAS - CLIENTES */}
+          {/* ======================================== */}
+          
           <Route
             path="/mis-cupones"
             element={
@@ -88,6 +108,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/carrito"
             element={
@@ -96,20 +117,81 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* ======================================== */}
+          {/* RUTAS PROTEGIDAS - PROVEEDORES */}
+          {/* ======================================== */}
+          
           <Route
             path="/proveedor/*"
             element={
-              <ProtectedRoute allowedRoles={['proveedor']}>
+              <ProtectedRoute allowedRoles={['proveedor', 'admin']}>
                 <ProveedorDashboard />
               </ProtectedRoute>
             }
           />
+
+          {/* ======================================== */}
+          {/* RUTAS PROTEGIDAS - ADMINISTRADORES */}
+          {/* ======================================== */}
+          
+          {/* Dashboard Admin (ruta base) */}
           <Route
-            path="/admin/*"
+            path="/admin"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDashboard />
               </ProtectedRoute>
+            }
+          />
+
+          {/* ADMIN - Gestión de Roles y Permisos */}
+          <Route
+            path="/admin/roles"
+            element={
+              <ProtectedRouteWithPermisos requiredPermiso="roles:manage">
+                <AdminRolesScreen />
+              </ProtectedRouteWithPermisos>
+            }
+          />
+
+          {/* ADMIN - Gestión de Usuarios (próximamente) */}
+          <Route
+            path="/admin/usuarios"
+            element={
+              <ProtectedRouteWithPermisos requiredPermiso="usuarios:read_all">
+                <AdminRolesScreen />
+              </ProtectedRouteWithPermisos>
+            }
+          />
+
+          {/* ADMIN - Gestión de Establecimientos (próximamente) */}
+          <Route
+            path="/admin/establecimientos"
+            element={
+              <ProtectedRouteWithPermisos requiredPermiso="establecimientos:update_all">
+                <AdminDashboard />
+              </ProtectedRouteWithPermisos>
+            }
+          />
+
+          {/* ADMIN - Gestión de Cupones (próximamente) */}
+          <Route
+            path="/admin/cupones"
+            element={
+              <ProtectedRouteWithPermisos requiredPermiso="cupones:update_own">
+                <AdminDashboard />
+              </ProtectedRouteWithPermisos>
+            }
+          />
+
+          {/* ADMIN - Gestión de Banners (próximamente) */}
+          <Route
+            path="/admin/banners"
+            element={
+              <ProtectedRouteWithPermisos requiredPermiso="banners:create">
+                <AdminDashboard />
+              </ProtectedRouteWithPermisos>
             }
           />
         </Routes>

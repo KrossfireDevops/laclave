@@ -17,7 +17,6 @@ export default function RegisterModal({ isOpen, onClose }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // ✅ Bloquear scroll del fondo cuando el modal está abierto
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -48,13 +47,13 @@ export default function RegisterModal({ isOpen, onClose }) {
     setLoading(true);
 
     if (!validateAge(fechaNacimiento)) {
-      setError('Es Necesario Contar con la mayoría de edad para tener acceso a esta plataforma');
+      setError('🔒 Por tu seguridad, LaClave solo está disponible para personas mayores de 18 años.');
       setLoading(false);
       return;
     }
 
     if (!acceptTerms) {
-      setError('Debes aceptar los Términos y Condiciones para registrarte.');
+      setError('📝 Para continuar, necesitamos que aceptes nuestros Términos y Condiciones.');
       setLoading(false);
       return;
     }
@@ -64,7 +63,7 @@ export default function RegisterModal({ isOpen, onClose }) {
         email,
         password,
         options: {
-          data: {
+           data:{
             nombre,
             apellido,
             telefono,
@@ -75,7 +74,15 @@ export default function RegisterModal({ isOpen, onClose }) {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        if (authError.message.includes('already registered')) {
+          setError('📧 ¡Ups! Esta dirección de correo ya está registrada en LaClave. ¿Quieres iniciar sesión?');
+        } else {
+          setError('🛠️ Hubo un pequeño problema al crear tu cuenta. Por favor, inténtalo de nuevo.');
+        }
+        setLoading(false);
+        return;
+      }
 
       if (data.user) {
         const { error: dbError } = await supabase.from('usuarios').insert({
@@ -93,15 +100,15 @@ export default function RegisterModal({ isOpen, onClose }) {
 
         if (dbError) {
           console.error('Error al crear perfil:', dbError);
-          setError('Error al crear tu perfil. Intenta de nuevo.');
+          setError('🛠️ Hubo un pequeño problema al guardar tu perfil. Por favor, inténtalo de nuevo.');
         } else {
-          alert('¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.');
+          alert('✨ ¡Casi listo, Rick!\nHemos enviado un correo a tu bandeja para que actives tu cuenta en LaClave.');
           onClose();
         }
       }
     } catch (err) {
       console.error('Error en registro:', err);
-      setError('Error al crear la cuenta. El correo podría estar en uso.');
+      setError('🛠️ Hubo un pequeño problema al procesar tu registro. Por favor, inténtalo de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -128,7 +135,6 @@ export default function RegisterModal({ isOpen, onClose }) {
 
   return (
     <>
-      {/* ✅ Estilos para ocultar scrollbar en Webkit (Chrome, Safari) */}
       <style>{`
         .register-modal-viewport::-webkit-scrollbar {
           display: none;
@@ -151,7 +157,6 @@ export default function RegisterModal({ isOpen, onClose }) {
         }}
         onClick={handleBackdropClick}
       >
-        {/* ✅ Contenedor con scroll interno y sin barra visible */}
         <div
           className="register-modal-viewport"
           style={{
@@ -161,7 +166,6 @@ export default function RegisterModal({ isOpen, onClose }) {
             maxWidth: 400,
             maxHeight: '90vh',
             overflowY: 'auto',
-            /* Ocultar scrollbar en Firefox y IE/Edge */
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
@@ -198,20 +202,20 @@ export default function RegisterModal({ isOpen, onClose }) {
             marginBottom: 12, 
             fontSize: 22 
           }}>
-            🗝️ Regístrate
+            🗝️ Regístrate en LaClave
           </h2>
 
           {error && (
             <div style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid #EF4444',
+              backgroundColor: 'rgba(192, 132, 252, 0.15)', // Morado suave
+              border: '1px solid #C084FC',
               borderRadius: 8,
               padding: 12,
               marginBottom: 14,
               fontSize: 13
             }}>
-              <p style={{ color: '#F87171', margin: 0 }}>
-                ❌ {error}
+              <p style={{ color: '#E0D6FF', margin: 0 }}>
+                {error}
               </p>
             </div>
           )}
@@ -297,7 +301,6 @@ export default function RegisterModal({ isOpen, onClose }) {
               <option value="X">Prefiero no decirlo</option>
             </select>
 
-            {/* Términos y marketing */}
             <div style={{ marginTop: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <input
                 type="checkbox"
@@ -375,7 +378,6 @@ export default function RegisterModal({ isOpen, onClose }) {
             <button
               onClick={() => {
                 onClose();
-                // Puedes abrir un LoginModal aquí si lo implementas
               }}
               style={{
                 color: colors.primary,

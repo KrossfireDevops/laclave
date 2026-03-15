@@ -1,8 +1,10 @@
 // src/screens/CuponesMarketplace.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
+import VisitorPopup from '../components/VisitorPopup';
+import RegisterModal from '../components/RegisterModal'; // ✅ IMPORTADO
 
 export default function CuponesMarketplace() {
   const navigate = useNavigate();
@@ -13,6 +15,10 @@ export default function CuponesMarketplace() {
   const [filtro, setFiltro] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [conteoPorHabitacion, setConteoPorHabitacion] = useState({});
+  
+  // ✅ Estados para los PopUps
+  const [showVisitorPopup, setShowVisitorPopup] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   // ICONOS SVG
   const BackIcon = () => (
@@ -35,6 +41,37 @@ export default function CuponesMarketplace() {
     </svg>
   );
 
+  const fetchRecomendaciones = useCallback(async (cuponesDisponibles) => {
+    if (!currentUser) {
+      setRecomendados(cuponesDisponibles.slice(0, 3));
+      return;
+    }
+
+    try {
+      const { data: historial, error } = await supabase
+        .from('cupones')
+        .select('establecimiento_id')
+        .eq('comprado_por', currentUser.id)
+        .eq('status', 'redeemed');
+
+      if (error) throw error;
+
+      const motelesVisitados = [...new Set(historial.map(c => c.establecimiento_id).filter(Boolean))];
+
+      if (motelesVisitados.length > 0) {
+        const recomendados = cuponesDisponibles
+          .filter(c => motelesVisitados.includes(c.establecimiento_id))
+          .slice(0, 3);
+        setRecomendados(recomendados.length > 0 ? recomendados : cuponesDisponibles.slice(0, 3));
+      } else {
+        setRecomendados(cuponesDisponibles.slice(0, 3));
+      }
+    } catch (err) {
+      console.error('Error al cargar recomendaciones:', err);
+      setRecomendados(cuponesDisponibles.slice(0, 3));
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     const fetchCupones = async () => {
       try {
@@ -49,7 +86,7 @@ export default function CuponesMarketplace() {
           `)
           .eq('status', 'onSale')
           .is('redeemed_at', null)
-          .gte('validity_end', today); // ✅ Vigente hoy o en el futuro
+          .gte('validity_end', today);
 
         if (error) throw error;
 
@@ -68,12 +105,8 @@ export default function CuponesMarketplace() {
 
         setCupones(cuponesUnicos);
 
-        // ✅ Cargar recomendaciones después de tener cupones
-        if (currentUser) {
-          fetchRecomendaciones(cuponesUnicos);
-        } else {
-          setRecomendados(cuponesUnicos.slice(0, 3));
-        }
+        // Llamar a fetchRecomendaciones con los cupones disponibles
+        fetchRecomendaciones(cuponesUnicos);
       } catch (err) {
         console.error('Error:', err);
       } finally {
@@ -81,90 +114,67 @@ export default function CuponesMarketplace() {
       }
     };
     fetchCupones();
-  }, [currentUser]);
+  }, [currentUser, fetchRecomendaciones]);
 
-  // ✅ Función de recomendación restaurada
-  const fetchRecomendaciones = async (cuponesDisponibles) => {
-    try {
-      // Buscar cupones redimidos (status = 'redeemed')
-      const { data: historial, error } = await supabase
-        .from('cupones')
-        .select('establecimiento_id')
-        .eq('comprado_por', currentUser.id)
-        .eq('status', 'redeemed'); // Más fiable que redeemed_at
-
-      if (error) throw error;
-
-      const motelesVisitados = [...new Set(historial.map(c => c.establecimiento_id).filter(Boolean))];
-
-      if (motelesVisitados.length > 0) {
-        const recomendados = cuponesDisponibles
-          .filter(c => motelesVisitados.includes(c.establecimiento_id))
-          .slice(0, 3);
-        setRecomendados(recomendados.length > 0 ? recomendados : cuponesDisponibles.slice(0, 3));
-      } else {
-        setRecomendados(cuponesDisponibles.slice(0, 3));
-      }
-    } catch (err) {
-      console.error('Error al cargar recomendaciones:', err);
-      setRecomendados(cuponesDisponibles.slice(0, 3));
+  // ✅ Función actualizada con PopUp para visitantes
+  const agregarAlCarrito = async (cuponId) => {
+    if (!currentUser) {
+      setShowVisitorPopup(true);
+      return;
     }
-  };
 
-  // ✅ Función corregida: agregar al carrito con validación completa
-    const agregarAlCarrito = async (cuponId) => {
-      if (!currentUser) {
-        alert('Inicia sesión para agregar al carrito');
-        navigate('/login');
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data: cupon, error: cuponError } = await supabase
+        .from('cupones')
+        .select('id, status')
+        .eq('id', cuponId)
+        .eq('status', 'onSale')
+        .is('redeemed_at', null)
+        .gte('validity_end', today)
+        .maybeSingle();
+
+      if (cuponError) {
+        console.error('Error en validación de cupón:', cuponError);
+        alert('🛠️ Hubo un problema al verificar la disponibilidad del cupón. Por favor, inténtalo de nuevo.');
         return;
       }
 
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        
-        // ✅ Usa maybeSingle() para evitar error si no hay resultado
-        const { data: cupon, error: cuponError } = await supabase
-          .from('cupones')
-          .select('id, status')
-          .eq('id', cuponId)
-          .eq('status', 'onSale')
-          .is('redeemed_at', null)
-          .gte('validity_end', today)
-          .maybeSingle(); // ← clave: no lanza error si no hay resultado
-
-        if (cuponError) {
-          console.error('Error en validación de cupón:', cuponError);
-          alert('❌ Error al verificar el cupón.');
-          return;
-        }
-
-        if (!cupon) {
-          // ✅ Este es el caso real: cupón no cumple las condiciones
-          alert('Este cupón ya no está disponible.');
-          return;
-        }
-
-        // Insertar en carritos
-        const { error: carritoError } = await supabase
-          .from('carritos')
-          .insert({
-            usuario_id: currentUser.id,
-            cupon_id: cuponId,
-            status: 'active',
-            created_at: new Date().toISOString()
-          });
-
-        if (carritoError) {
-          console.error('Error al agregar al carrito:', carritoError);
-          throw carritoError;
-        }
-
-        alert('✅ Cupón agregado al carrito');
-      } catch (err) {
-        console.error('Error en agregarAlCarrito:', err);
-        alert('❌ No se pudo agregar el cupón al carrito. Inténtalo más tarde.');
+      if (!cupon) {
+        alert('🎟️ Lo sentimos, este cupón ya fue canjeado o ya no está vigente.');
+        return;
       }
-    };
+
+      const { error: carritoError } = await supabase
+        .from('carritos')
+        .insert({
+          usuario_id: currentUser.id,
+          cupon_id: cuponId,
+          status: 'active',
+          created_at: new Date().toISOString()
+        });
+
+      if (carritoError) {
+        console.error('Error al agregar al carrito:', carritoError);
+        throw carritoError;
+      }
+
+      alert('🛒 ¡Listo! El cupón se ha agregado a tu carrito.');
+    } catch (err) {
+      console.error('Error en agregarAlCarrito:', err);
+      alert('💎 No pudimos agregar el cupón en este momento. Por favor, intenta de nuevo o contacta al soporte.');
+    }
+  };
+
+  // ✅ NUEVA FUNCIÓN: Manejar clic en botón del carrito
+  const handleComprarCupones = () => {
+    if (!currentUser) {
+      setShowVisitorPopup(true);
+      return;
+    }
+    navigate('/carrito');
+  };
 
   const calcularPrecioFinal = (cupon) => {
     if (!cupon.descuento_porcentaje) return cupon.precio_cupon;
@@ -198,6 +208,25 @@ export default function CuponesMarketplace() {
 
   return (
     <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#e2e8f0', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+      
+      {/* ✅ PopUp para visitantes */}
+      <VisitorPopup
+        isOpen={showVisitorPopup}
+        onClose={() => setShowVisitorPopup(false)}
+        onRegister={() => {
+          setShowVisitorPopup(false);
+          setShowRegisterModal(true);
+        }}
+      />
+
+      {/* ✅ Componente RegisterModal */}
+      {showRegisterModal && (
+        <RegisterModal 
+          isOpen={showRegisterModal}
+          onClose={() => setShowRegisterModal(false)}
+        />
+      )}
+
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px' }}>
         <button onClick={() => navigate(-1)} style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(192,132,252,0.15)', border: '2px solid rgba(192,132,252,0.3)', color: '#C084FC', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.3s ease' }}
@@ -206,14 +235,16 @@ export default function CuponesMarketplace() {
           <BackIcon />
         </button>
         <h1 style={{ color: '#C084FC', fontSize: 28, fontWeight: 'bold', margin: 0 }}>Cupones Disponibles</h1>
-        <button onClick={() => navigate('/carrito')} style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(236,72,153,0.15)', border: '2px solid rgba(236,72,153,0.3)', color: '#EC4899', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.3s ease' }}
+        <button 
+          onClick={handleComprarCupones} // ✅ USAR FUNCIÓN PROTEGIDA
+          style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(236,72,153,0.15)', border: '2px solid rgba(236,72,153,0.3)', color: '#EC4899', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.3s ease' }}
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(236,72,153,0.3)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(236,72,153,0.15)'; e.currentTarget.style.transform = 'scale(1)'; }}>
           <CartIcon />
         </button>
       </div>
 
-      {/* ✅ SECCIÓN DE RECOMENDADOS */}
+      {/* SECCIÓN DE RECOMENDADOS */}
       {recomendados.length > 0 && (
         <div style={{ padding: '0 24px 24px' }}>
           <h2 style={{ color: '#DDD6FE', fontSize: 19, margin: '0 0 16px' }}>
@@ -260,8 +291,12 @@ export default function CuponesMarketplace() {
                         borderRadius: 8,
                         fontSize: 12,
                         fontWeight: 'bold',
-                        marginTop: 8
+                        marginTop: 8,
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
                       }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#D8B4FE'}
+                      onMouseLeave={e => e.currentTarget.style.background = '#C084FC'}
                     >
                       Agregar
                     </button>
@@ -304,7 +339,6 @@ export default function CuponesMarketplace() {
               {cupon.establecimientos?.cover_image && (
                 <div style={{ position: 'relative', height: 140 }}>
                   <img src={cupon.establecimientos.cover_image} alt={cupon.establecimientos.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  {/* ETIQUETA CON DESTELLO RECUPERADO Y MEJORADO */}
                   <div className="badge-disponibles">
                     <span>{cantidad} disponibles</span>
                   </div>
@@ -330,8 +364,20 @@ export default function CuponesMarketplace() {
                   </span>
                 </div>
 
-                {/* ✅ Botón corregido */}
-                <button onClick={() => agregarAlCarrito(cupon.id)} className="btn-agregar">
+                <button 
+                  onClick={() => agregarAlCarrito(cupon.id)} 
+                  className="btn-agregar"
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#D8B4FE';
+                    e.currentTarget.style.transform = 'translateY(-3px)';
+                    e.currentTarget.style.boxShadow = '0 15px 30px rgba(192,132,252,0.5)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#C084FC';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(192,132,252,0.4)';
+                  }}
+                >
                   Agregar al carrito
                 </button>
               </div>
@@ -340,7 +386,6 @@ export default function CuponesMarketplace() {
         })}
       </div>
 
-      {/* ESTILOS GLOBALES CON EL PULSE GLOW RECUPERADO */}
       <style jsx global>{`
         .cupones-grid {
           display: grid;
@@ -362,9 +407,11 @@ export default function CuponesMarketplace() {
           box-shadow: 0 8px 25px rgba(0,0,0,0.4);
           transition: all 0.4s ease;
         }
-        .cupon-card:hover { transform: translateY(-8px); }
+        .cupon-card:hover { 
+          transform: translateY(-8px);
+          box-shadow: 0 12px 40px rgba(192,132,252,0.3);
+        }
 
-        /* ETIQUETA CON DESTELLO PREMIUM RECUPERADO */
         .badge-disponibles {
           position: absolute;
           top: 10px;
@@ -393,16 +440,10 @@ export default function CuponesMarketplace() {
           transition: all 0.3s;
           box-shadow: 0 6px 20px rgba(192,132,252,0.4);
         }
-        .btn-agregar:hover {
-          background: #E9D5FF;
-          transform: translateY(-3px);
-          box-shadow: 0 15px 30px rgba(192,132,252,0.5);
-        }
 
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ANIMACIÓN DE DESTELLO RECUPERADA Y MEJORADA */
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         @keyframes pulseGlow {
           0%, 100% {
             box-shadow: 0 0 20px rgba(247, 114, 25, 0.7);

@@ -1,5 +1,5 @@
 // src/screens/Carrito.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,16 +11,7 @@ export default function Carrito() {
   const [loading, setLoading] = useState(true);
   const [procesandoPago, setProcesandoPago] = useState(false);
 
-  useEffect(() => {
-    if (!currentUser) {
-      navigate('/login');
-      return;
-    }
-
-    fetchCarrito();
-  }, [currentUser, navigate]);
-
-  const fetchCarrito = async () => {
+  const fetchCarrito = useCallback(async () => {
     setLoading(true);
     try {
       console.log('🛒 Cargando carrito para usuario:', currentUser.id);
@@ -91,11 +82,20 @@ export default function Carrito() {
       setCarritoItems(itemsConDetalles);
     } catch (err) {
       console.error('💥 Error al cargar carrito:', err);
-      alert('No se pudo cargar tu carrito. Verifica tu conexión.');
+      alert('🛒 No pudimos cargar tu carrito en este momento. Por favor, verifica tu conexión o inténtalo más tarde.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+
+    fetchCarrito();
+  }, [currentUser, navigate, fetchCarrito]);
 
   const eliminarDelCarrito = async (carritoId) => {
     if (!window.confirm('¿Eliminar este cupón del carrito?')) return;
@@ -112,13 +112,13 @@ export default function Carrito() {
       fetchCarrito();
     } catch (err) {
       console.error('❌ Error al eliminar:', err);
-      alert('No se pudo eliminar el cupón.');
+      alert('🛠️ No pudimos eliminar el cupón. Por favor, inténtalo de nuevo.');
     }
   };
 
   const procesarPago = async () => {
     if (carritoItems.length === 0) {
-      alert('Tu carrito está vacío.');
+      alert('🧺 Tu carrito está vacío. ¡Llénalo con experiencias únicas!');
       return;
     }
 
@@ -138,7 +138,7 @@ export default function Carrito() {
 
       if (validError) throw validError;
       if (!disponibles || disponibles.length !== cuponIds.length) {
-        alert('Algunos cupones ya no están disponibles. Actualizando carrito...');
+        alert('🎟️ Algunos cupones ya fueron canjeados. Actualizando tu carrito...');
         fetchCarrito();
         return;
       }
@@ -167,12 +167,12 @@ export default function Carrito() {
 
       if (carritoError) throw carritoError;
 
-      alert('✅ ¡Compra exitosa!\nTus cupones ya están listos para usar.');
+      alert('💎 ¡Compra exitosa!\nTus cupones ya están listos para disfrutar.');
       navigate('/mis-cupones');
 
     } catch (err) {
       console.error('💥 Error en compra:', err);
-      alert('Error al procesar la compra. Inténtalo más tarde.');
+      alert('🔐 Hubo un problema al procesar tu compra. Por favor, inténtalo de nuevo o contacta al soporte.');
     } finally {
       setProcesandoPago(false);
     }
@@ -223,7 +223,7 @@ export default function Carrito() {
       padding: '20px',
       color: '#E0E0FF'
     }}>
-      {/* HEADER ESTILIZADO */}
+      {/* HEADER */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -385,7 +385,7 @@ export default function Carrito() {
                 e.currentTarget.style.transform = 'translateX(0)';
               }}
               >
-                {/* Botón eliminar mejorado */}
+                {/* Botón eliminar */}
                 <button
                   onClick={() => eliminarDelCarrito(item.id)}
                   style={{

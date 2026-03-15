@@ -1,6 +1,5 @@
 // src/components/TarjetaCupon.js
 import React from 'react';
-import { colors } from '../styles/globalStyles';
 
 // ===== ESTILOS LOCALES =====
 const tarjetaStyles = {
@@ -110,6 +109,18 @@ const tarjetaStyles = {
     fontSize: 12,
     color: '#94a3b8',
     margin: '6px 0'
+  },
+  // ✅ NUEVO ESTILO PARA CONDICIONES
+  conditionsText: {
+    fontSize: 11,
+    color: '#FBBF24', // Ámbar para advertencia
+    fontStyle: 'italic',
+    margin: '6px 0 0',
+    lineHeight: 1.4,
+    backgroundColor: 'rgba(251, 191, 36, 0.08)',
+    padding: '6px 8px',
+    borderRadius: 6,
+    borderLeft: '2px solid #FBBF24'
   }
 };
 
@@ -153,8 +164,7 @@ export default function TarjetaCupon({ cupon, onClick }) {
             style={tarjetaStyles.coverImg}
             onError={(e) => {
               e.target.style.display = 'none';
-              e.currentTarget.textContent = '📷 Imagen no disponible';
-              e.currentTarget.style.display = 'flex';
+              e.target.parentElement.textContent = '📷 Imagen no disponible';
             }}
           />
         </div>
@@ -221,6 +231,12 @@ export default function TarjetaCupon({ cupon, onClick }) {
             ⏱️ Canjeado el {new Date(cupon.redeemed_at).toLocaleDateString('es-MX')}
           </p>
         )}
+
+        {/* ✅ NUEVA SECCIÓN: Condiciones del cupón (SIEMPRE VISIBLE) */}
+        <p style={tarjetaStyles.conditionsText}>
+          ⚠️ Canje de cupón limitado a disponibilidad de habitaciones del establecimiento. Los cupones no son válidos el 14 de febrero.
+        </p>
+
       </div>
     </div>
   );

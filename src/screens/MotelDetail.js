@@ -1,8 +1,10 @@
 // src/screens/MotelDetail.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
+import VisitorPopup from '../components/VisitorPopup'; // ✅ NUEVO IMPORT
+import RegisterModal from '../components/RegisterModal'; // ✅ NUEVO IMPORT
 
 export default function MotelDetail() {
   const { id } = useParams();
@@ -11,12 +13,37 @@ export default function MotelDetail() {
   const [motel, setMotel] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [userCoupons, setUserCoupons] = useState([]);
   
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [roomNumber, setRoomNumber] = useState('');
   const [submittingRedemption, setSubmittingRedemption] = useState(false);
+  
+  // ✅ Estados para PopUp de visitantes
+  const [showVisitorPopup, setShowVisitorPopup] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+
+  const fetchUserCoupons = useCallback(async () => {
+    if (!currentUser) return;
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { error } = await supabase
+        .from('cupones')
+        .select('*')
+        .eq('comprado_por', currentUser.id)
+        .eq('status', 'sold')
+        .is('redeemed_at', null)
+        .lte('validity_start', today)
+        .gte('validity_end', today);
+
+      if (error) {
+        console.error('Error al cargar cupones:', error);
+      }
+    } catch (err) {
+      console.error('Error al cargar cupones:', err);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (!id || typeof id !== 'string' || id.trim() === '') {
@@ -82,37 +109,14 @@ export default function MotelDetail() {
     return () => { isMounted = false; };
   }, [id, navigate]);
 
-  const fetchUserCoupons = async () => {
-    if (!currentUser) return;
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('cupones')
-        .select('*')
-        .eq('comprado_por', currentUser.id)
-        .eq('status', 'sold')
-        .is('redeemed_at', null)
-        .lte('validity_start', today)
-        .gte('validity_end', today);
-
-      if (error) {
-        console.error('Error al cargar cupones:', error);
-      } else {
-        setUserCoupons(data || []);
-      }
-    } catch (err) {
-      console.error('Error al cargar cupones:', err);
-    }
-  };
-
   useEffect(() => {
     fetchUserCoupons();
-  }, [currentUser]);
+  }, [fetchUserCoupons]);
 
+  // ✅ Función actualizada con PopUp para visitantes
   const handleCallCheckIn = (room) => {
     if (!currentUser) {
-      alert('Debes iniciar sesión para solicitar una redención.');
-      navigate('/login');
+      setShowVisitorPopup(true);
       return;
     }
     setSelectedRoom(room);
@@ -147,24 +151,24 @@ export default function MotelDetail() {
 
       const cuponId = cupones[0].id;
 
-    const userId = currentUser.id;
-    if (!userId || userId.length !== 36 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
-      console.error('❌ ID de usuario inválido:', userId);
-      alert('Error: tu sesión no es válida. Por favor, inicia sesión de nuevo.');
-      setShowRoomModal(false);
-      setSubmittingRedemption(false);
-      return;
-    }
+      const userId = currentUser.id;
+      if (!userId || userId.length !== 36 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+        console.error('❌ ID de usuario inválido:', userId);
+        alert('Error: tu sesión no es válida. Por favor, inicia sesión de nuevo.');
+        setShowRoomModal(false);
+        setSubmittingRedemption(false);
+        return;
+      }
 
-    const { error: redencionError } = await supabase
-      .from('redenciones')
-      .insert({
-        cupon_id: cuponId,
-        cliente_id: userId,
-        status: 'pendiente',
-        room_number: roomNumber.trim(),
-        requested_at: new Date().toISOString()
-      });
+      const { error: redencionError } = await supabase
+        .from('redenciones')
+        .insert({
+          cupon_id: cuponId,
+          cliente_id: userId,
+          status: 'pendiente',
+          room_number: roomNumber.trim(),
+          requested_at: new Date().toISOString()
+        });
 
       if (redencionError) throw redencionError;
 
@@ -188,7 +192,7 @@ export default function MotelDetail() {
   const handleOpenMaps = () => {
     if (!motel?.coords) return;
     const { latitude, longitude } = motel.coords;
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=  ${latitude},${longitude}`;
     window.open(url, '_blank');
   };
 
@@ -298,6 +302,24 @@ export default function MotelDetail() {
       minHeight: '100vh',
       color: '#E0E0FF'
     }}>
+      
+      {/* ✅ PopUp para visitantes */}
+      <VisitorPopup
+        isOpen={showVisitorPopup}
+        onClose={() => setShowVisitorPopup(false)}
+        onRegister={() => {
+          setShowVisitorPopup(false);
+          setShowRegisterModal(true);
+        }}
+      />
+
+      {/* ✅ Modal de registro */}
+      {showRegisterModal && (
+        <RegisterModal 
+          isOpen={showRegisterModal}
+          onClose={() => setShowRegisterModal(false)}
+        />
+      )}
 
       {showRoomModal && (
         <div style={{
@@ -497,7 +519,7 @@ export default function MotelDetail() {
                   boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
                 }}
                 onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/600x420/333/C084FC?text=Imagen+no+disponible';
+                  e.target.src = 'https://via.placeholder.com/600x420/333/C084FC?text=Imagen+no+disponible  ';
                 }}
               />
             ) : (
@@ -556,23 +578,44 @@ export default function MotelDetail() {
           </div>
 
           {motel.amenities && motel.amenities.length > 0 && (
-            <div>
-              <h3 style={{ fontSize: 17, margin: '0 0 10px', color: '#DDD6FE' }}>Servicios:</h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {motel.amenities.map((amenity, idx) => (
-                  <span key={idx} style={{ 
-                    backgroundColor: 'rgba(192, 132, 252, 0.2)',
-                    color: '#E0E0FF',
-                    padding: '4px 10px',
-                    borderRadius: 16,
-                    fontSize: 12
-                  }}>
-                    ✓ {amenity}
-                  </span>
-                ))}
+              <div>
+                <h3 style={{ fontSize: 17, margin: '0 0 10px', color: '#DDD6FE' }}>Servicios:</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {motel.amenities.map((amenity, idx) => (
+                    <span key={idx} style={{ 
+                      backgroundColor: 'rgba(192, 132, 252, 0.2)',
+                      color: '#E0E0FF',
+                      padding: '4px 10px',
+                      borderRadius: 16,
+                      fontSize: 12
+                    }}>
+                      ✓ {amenity}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* ✅ NUEVA SECCIÓN: Condiciones del establecimiento */}
+            {motel.conditions && motel.conditions.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <h3 style={{ fontSize: 17, margin: '0 0 10px', color: '#FBBF24' }}>Condiciones:</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {motel.conditions.map((condition, idx) => (
+                    <span key={idx} style={{ 
+                      backgroundColor: 'rgba(251, 191, 36, 0.15)',
+                      color: '#FBBF24',
+                      padding: '4px 10px',
+                      borderRadius: 16,
+                      fontSize: 12,
+                      border: '1px solid rgba(251, 191, 36, 0.3)'
+                    }}>
+                      ⚠️ {condition}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
           <div>
             <p style={{ fontSize: 15, margin: '6px 0', color: '#C4B5FD' }}>
@@ -776,11 +819,11 @@ export default function MotelDetail() {
                         ${room.precio ? room.precio.toLocaleString('es-MX') : '—'}
                       </p>
                       
-                      {/* Botón CHECK IN */}
+                      {/* Botón CHECK IN - PROTEGIDO ✅ */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCallCheckIn(room);
+                          handleCallCheckIn(room); // ✅ FUNCIÓN PROTEGIDA
                         }}
                         style={{
                           backgroundColor: 'rgba(248, 35, 248, 0.84)',

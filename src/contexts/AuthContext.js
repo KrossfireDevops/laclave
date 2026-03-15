@@ -10,47 +10,38 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isSubscribed = true;
+
     const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        // Intentar cargar perfil
-        const { data: profile } = await supabase
-          .from('usuarios')
-          .select('rol, nombre, alias')
-          .eq('id', session.user.id)
-          .maybeSingle();
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!isSubscribed) return;
 
-        const enrichedUser = {
-          ...session.user,
-          rol: profile?.rol || 'cliente',
-          nombre: profile?.nombre || null,
-          alias: profile?.alias || null,
-        };
+        if (error) {
+          console.error('Error al obtener sesión:', error);
+          setCurrentUser(null);
+          setRole(null);
+          setLoading(false);
+          return;
+        }
 
-        setCurrentUser(enrichedUser);
-        setRole(profile?.rol || 'cliente');
-      } else {
-        setCurrentUser(null);
-        setRole(null);
-      }
-      setLoading(false);
-    };
-
-    initializeAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
         if (session?.user) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('usuarios')
             .select('rol, nombre, alias')
             .eq('id', session.user.id)
             .maybeSingle();
+
+          if (!isSubscribed) return;
+
+          if (profileError) {
+            console.warn('No se pudo cargar el perfil:', profileError);
+          }
 
           const enrichedUser = {
             ...session.user,
@@ -65,35 +56,99 @@ export function AuthProvider({ children }) {
           setCurrentUser(null);
           setRole(null);
         }
+      } catch (err) {
+        console.error('Excepción en initializeAuth:', err);
+        if (isSubscribed) {
+          setCurrentUser(null);
+          setRole(null);
+        }
+      } finally {
+        if (isSubscribed) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (!isSubscribed) return;
+
+        try {
+          if (session?.user) {
+            const { data: profile, error: profileError } = await supabase
+              .from('usuarios')
+              .select('rol, nombre, alias')
+              .eq('id', session.user.id)
+              .maybeSingle();
+
+            if (!isSubscribed) return;
+
+            if (profileError) {
+              console.warn('No se pudo cargar el perfil en cambio de auth:', profileError);
+            }
+
+            const enrichedUser = {
+              ...session.user,
+              rol: profile?.rol || 'cliente',
+              nombre: profile?.nombre || null,
+              alias: profile?.alias || null,
+            };
+
+            setCurrentUser(enrichedUser);
+            setRole(profile?.rol || 'cliente');
+          } else {
+            setCurrentUser(null);
+            setRole(null);
+          }
+        } catch (err) {
+          console.error('Error en onAuthStateChange:', err);
+          if (isSubscribed) {
+            setCurrentUser(null);
+            setRole(null);
+          }
+        }
       }
     );
 
     return () => {
-      subscription.unsubscribe();
+      isSubscribed = false;
+      if (subscription) subscription.unsubscribe();
     };
   }, []);
+
+  const signInWithGoogle = () => {
+    // ✅ En desarrollo local, no necesitas redirectTo si ya está configurado en Supabase
+    const isLocal = window.location.hostname === 'localhost';
+    const options = isLocal 
+      ? {} 
+      : { redirectTo: `${window.location.origin}/auth/callback` };
+    
+    return supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options
+    });
+  };
+
+  const signInWithEmail = (email, password) => {
+    return supabase.auth.signInWithPassword({ email, password });
+  };
+
+  const signOut = () => supabase.auth.signOut();
 
   const value = {
     currentUser,
     role,
     loading,
-    signInWithGoogle: () => {
-      return supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-    },
-    signInWithEmail: (email, password) => {
-      return supabase.auth.signInWithPassword({ email, password });
-    },
-    signOut: () => supabase.auth.signOut(),
+    signInWithGoogle,
+    signInWithEmail,
+    signOut
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

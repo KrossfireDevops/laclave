@@ -23,8 +23,96 @@ export const colors = {
   overlay: 'rgba(0, 0, 0, 0.9)',
 };
 
+// ======================== TIPOGRAFÍAS LA CLAVE ========================
+export const typography = {
+  // Fuentes principales
+  fontFamilies: {
+    logo: '"Playfair Display", serif',
+    title: '"Montserrat", sans-serif',
+    body: '"Inter", sans-serif',
+    button: '"Montserrat", sans-serif',
+  },
+
+  // Pesos de fuente
+  weights: {
+    light: 300,
+    regular: 400,
+    medium: 500,
+    semiBold: 600,
+    bold: 700,
+  },
+
+  // Estilos para el logo
+  logo: {
+    fontFamily: '"Playfair Display", serif',
+    fontWeight: 700,
+    fontSize: '32px',
+    letterSpacing: '1px',
+    textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+  },
+
+  // Estilos para títulos
+  title: {
+    fontFamily: '"Montserrat", sans-serif',
+    fontWeight: 600,
+    fontSize: '20px',
+    lineHeight: 1.3,
+  },
+
+  // Estilos para subtítulos
+  subtitle: {
+    fontFamily: '"Montserrat", sans-serif',
+    fontWeight: 500,
+    fontSize: '16px',
+    letterSpacing: '0.5px',
+    lineHeight: 1.4,
+  },
+
+  // Estilos para texto del cuerpo
+  body: {
+    fontFamily: '"Inter", sans-serif',
+    fontWeight: 400,
+    fontSize: '14px',
+    lineHeight: '1.5',
+  },
+
+  // Estilos para botones
+  button: {
+    fontFamily: '"Montserrat", sans-serif',
+    fontWeight: 600,
+    fontSize: '16px',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+  },
+
+  // Estilos para texto pequeño
+  small: {
+    fontFamily: '"Inter", sans-serif',
+    fontWeight: 400,
+    fontSize: '12px',
+    lineHeight: '1.4',
+  },
+
+  // Estilos para badges/etiquetas
+  badge: {
+    fontFamily: '"Montserrat", sans-serif',
+    fontWeight: 600,
+    fontSize: '13px',
+    letterSpacing: '0.3px',
+  },
+};
+
 // ======================== ESTILOS GLOBALES REUTILIZABLES ========================
 export const globalStyles = {
+  // Tipografía base para la aplicación
+  typographyBase: {
+    fontFamily: typography.fontFamilies.body,
+    fontWeight: typography.weights.regular,
+    fontSize: '14px',
+    lineHeight: '1.5',
+    color: colors.text,
+  },
+
   // Inputs
   input: {
     width: '100%',
@@ -34,6 +122,7 @@ export const globalStyles = {
     borderRadius: '16px',
     backgroundColor: 'rgba(30, 30, 40, 0.9)',
     color: 'white',
+    fontFamily: typography.fontFamilies.body,
     fontSize: '15px',
     outline: 'none',
     transition: 'all 0.3s ease',
@@ -51,8 +140,10 @@ export const globalStyles = {
     color: 'white',
     border: 'none',
     borderRadius: '16px',
-    fontWeight: 'bold',
+    fontFamily: typography.fontFamilies.button,
+    fontWeight: typography.weights.semiBold,
     fontSize: '16px',
+    letterSpacing: '0.5px',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
     boxShadow: '0 8px 25px rgba(192, 132, 252, 0.4)',
@@ -68,14 +159,16 @@ export const globalStyles = {
     borderRadius: '12px',
     color: 'white',
     border: 'none',
-    fontWeight: 'bold',
+    fontFamily: typography.fontFamilies.button,
+    fontWeight: typography.weights.semiBold,
     cursor: 'pointer',
   },
   buttonSmall: {
     padding: '8px 16px',
     borderRadius: '12px',
+    fontFamily: typography.fontFamilies.button,
+    fontWeight: typography.weights.semiBold,
     fontSize: '14px',
-    fontWeight: 'bold',
     border: 'none',
     cursor: 'pointer',
   },
@@ -98,8 +191,9 @@ export const globalStyles = {
   badge: {
     padding: '8px 16px',
     borderRadius: '30px',
+    fontFamily: typography.fontFamilies.title,
     fontSize: '13px',
-    fontWeight: 'bold',
+    fontWeight: typography.weights.semiBold,
     color: 'white',
   },
   badgeActive: { backgroundColor: 'rgba(16, 185, 129, 0.95)' },
@@ -109,7 +203,8 @@ export const globalStyles = {
     color: colors.primary,
     padding: '12px 20px',
     borderRadius: '16px',
-    fontWeight: 'bold',
+    fontFamily: typography.fontFamilies.title,
+    fontWeight: typography.weights.semiBold,
     fontSize: '15px',
   },
 
@@ -121,6 +216,7 @@ export const globalStyles = {
     border: `1px solid ${colors.border}`,
     maxHeight: '90vh',
     overflowY: 'auto',
+    fontFamily: typography.fontFamilies.body,
   },
 
   // Spinner
@@ -138,8 +234,9 @@ export const globalStyles = {
     padding: '10px 20px',
     border: `2px solid ${colors.primary}`,
     borderRadius: '30px',
+    fontFamily: typography.fontFamilies.button,
     fontSize: '14px',
-    fontWeight: 'bold',
+    fontWeight: typography.weights.semiBold,
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     transition: 'all 0.3s',
@@ -148,19 +245,118 @@ export const globalStyles = {
     backgroundColor: colors.primary,
     color: 'white',
   },
+
+  // Headings
+  h1: {
+    ...typography.logo,
+    fontSize: '32px',
+    color: colors.primary,
+  },
+  h2: {
+    fontFamily: typography.fontFamilies.title,
+    fontWeight: typography.weights.semiBold,
+    fontSize: '24px',
+    color: colors.textLight,
+  },
+  h3: {
+    fontFamily: typography.fontFamilies.title,
+    fontWeight: typography.weights.semiBold,
+    fontSize: '20px',
+    color: colors.text,
+  },
+  h4: {
+    fontFamily: typography.fontFamilies.title,
+    fontWeight: typography.weights.medium,
+    fontSize: '18px',
+    color: colors.text,
+  },
 };
 
 // ======================== ESTILOS DEL ADMIN DASHBOARD ========================
 export const adminStyles = {
-  adminContainer: { backgroundColor: colors.background, color: colors.text, minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
-  header: { position: 'fixed', top: 0, left: 0, right: 0, height: 64, background: colors.headerBg, backdropFilter: 'blur(12px)', borderBottom: `1px solid ${colors.border}`, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' },
-  sidebar: { width: 240, background: colors.sidebarBg, borderRight: `1px solid ${colors.border}`, padding: '20px 0', position: 'fixed', height: 'calc(100vh - 64px)', overflowY: 'auto' },
-  mainContent: { marginLeft: 240, padding: 40, width: 'calc(100% - 240px)' },
-  statCard: { background: colors.cardBg, borderRadius: 20, padding: 28, border: `1px solid ${colors.border}`, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' },
-  chartContainer: { background: colors.cardBg, borderRadius: 20, padding: 24, border: `1px solid ${colors.border}` },
-  listItem: { background: 'rgba(30,30,40,0.7)', padding: 16, borderRadius: 12, border: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  modalOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000, padding: 20 },
-  modalContent: { background: '#1a1a2e', padding: 24, borderRadius: 16, width: '90%', maxWidth: 500, border: `1px solid ${colors.primary}`, maxHeight: '90vh', overflowY: 'auto' },
+  adminContainer: { 
+    backgroundColor: colors.background, 
+    color: colors.text, 
+    minHeight: '100vh', 
+    fontFamily: typography.fontFamilies.body 
+  },
+  header: { 
+    position: 'fixed', 
+    top: 0, 
+    left: 0, 
+    right: 0, 
+    height: 64, 
+    background: colors.headerBg, 
+    backdropFilter: 'blur(12px)', 
+    borderBottom: `1px solid ${colors.border}`, 
+    zIndex: 1000, 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    padding: '0 24px' 
+  },
+  sidebar: { 
+    width: 240, 
+    background: colors.sidebarBg, 
+    borderRight: `1px solid ${colors.border}`, 
+    padding: '20px 0', 
+    position: 'fixed', 
+    height: 'calc(100vh - 64px)', 
+    overflowY: 'auto',
+    fontFamily: typography.fontFamilies.body,
+  },
+  mainContent: { 
+    marginLeft: 240, 
+    padding: 40, 
+    width: 'calc(100% - 240px)',
+    fontFamily: typography.fontFamilies.body,
+  },
+  statCard: { 
+    background: colors.cardBg, 
+    borderRadius: 20, 
+    padding: 28, 
+    border: `1px solid ${colors.border}`, 
+    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+    fontFamily: typography.fontFamilies.body,
+  },
+  chartContainer: { 
+    background: colors.cardBg, 
+    borderRadius: 20, 
+    padding: 24, 
+    border: `1px solid ${colors.border}`,
+    fontFamily: typography.fontFamilies.body,
+  },
+  listItem: { 
+    background: 'rgba(30,30,40,0.7)', 
+    padding: 16, 
+    borderRadius: 12, 
+    border: `1px solid ${colors.border}`, 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    fontFamily: typography.fontFamilies.body,
+  },
+  modalOverlay: { 
+    position: 'fixed', 
+    inset: 0, 
+    backgroundColor: 'rgba(0,0,0,0.8)', 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    zIndex: 2000, 
+    padding: 20 
+  },
+  modalContent: { 
+    background: '#1a1a2e', 
+    padding: 24, 
+    borderRadius: 16, 
+    width: '90%', 
+    maxWidth: 500, 
+    border: `1px solid ${colors.primary}`, 
+    maxHeight: '90vh', 
+    overflowY: 'auto',
+    fontFamily: typography.fontFamilies.body,
+  },
   flexBetween: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   gap12: { display: 'flex', gap: 12 },
   mb24: { marginBottom: 24 },
@@ -169,10 +365,33 @@ export const adminStyles = {
 
 // ======================== ESTILOS DEL PUBLIC HOME (HERO PREMIUM) ========================
 export const homeStyles = {
-  container: { backgroundColor: colors.background, minHeight: '100vh', padding: 20, color: colors.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, position: 'relative' },
-  logo: { color: colors.primary, fontSize: 32, fontWeight: 'bold', margin: 0 },
-  subtitle: { textAlign: 'center', margin: '8px 0 24px', color: colors.secondary, fontSize: 16 },
+  container: { 
+    backgroundColor: colors.background, 
+    minHeight: '100vh', 
+    padding: 20, 
+    color: colors.text, 
+    fontFamily: typography.fontFamilies.body 
+  },
+  header: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 24, 
+    position: 'relative' 
+  },
+  logo: { 
+    ...typography.logo,
+    color: colors.primary, 
+    fontSize: '32px', 
+    margin: 0 
+  },
+  subtitle: { 
+    ...typography.subtitle,
+    textAlign: 'center', 
+    margin: '8px 0 24px', 
+    color: colors.secondary, 
+    fontSize: '16px' 
+  },
 
   // Hero Banner Premium (Booking/Expedia style 2025)
   bannerContainer: {
@@ -186,7 +405,13 @@ export const homeStyles = {
     position: 'relative',
     margin: '0 auto',
   },
-  bannerImage: { width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' },
+  bannerImage: { 
+    width: '100%', 
+    height: '100%', 
+    objectFit: 'cover', 
+    objectPosition: 'center top', 
+    display: 'block' 
+  },
   bannerOverlay: {
     position: 'absolute',
     top: '20%',
@@ -200,21 +425,37 @@ export const homeStyles = {
     textAlign: 'center',
     maxWidth: '90%',
     border: `2px solid rgba(192, 132, 252, 0.3)`,
+    fontFamily: typography.fontFamilies.body,
   },
-  bannerTitle: { margin: '0 0 12px', fontSize: 'clamp(20px, 5vw, 32px)', fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.6)' },
+  bannerTitle: { 
+    fontFamily: typography.fontFamilies.title,
+    fontWeight: typography.weights.semiBold,
+    margin: '0 0 12px', 
+    fontSize: 'clamp(20px, 5vw, 32px)', 
+    textShadow: '0 2px 8px rgba(0,0,0,0.6)' 
+  },
   bannerCta: {
     background: 'linear-gradient(135deg, #C084FC, #A855F7)',
     color: 'white',
     border: 'none',
     padding: '12px 28px',
     borderRadius: 30,
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontFamily: typography.fontFamilies.button,
+    fontWeight: typography.weights.semiBold,
+    fontSize: '16px',
     cursor: 'pointer',
     transition: 'all 0.3s',
     boxShadow: '0 6px 20px rgba(192, 132, 252, 0.4)',
   },
-  bannerDots: { position: 'absolute', bottom: 16, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 8 },
+  bannerDots: { 
+    position: 'absolute', 
+    bottom: 16, 
+    left: 0, 
+    right: 0, 
+    display: 'flex', 
+    justifyContent: 'center', 
+    gap: 8 
+  },
   bannerDot: (active) => ({
     width: active ? 20 : 8,
     height: 8,
@@ -224,12 +465,45 @@ export const homeStyles = {
     cursor: 'pointer',
   }),
 
-  sectionTitle: { color: '#DDD6FE', margin: '32px 0 16px', fontSize: 22, fontWeight: 'bold' },
+  sectionTitle: { 
+    ...typography.title,
+    color: '#DDD6FE', 
+    margin: '32px 0 16px', 
+    fontSize: '22px' 
+  },
 
-  motelesGrid: { display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 16, scrollbarWidth: 'none', msOverflowStyle: 'none' },
-  motelCard: { minWidth: 200, backgroundColor: 'rgba(30, 30, 40, 0.7)', borderRadius: 12, padding: 16, flexShrink: 0, border: `1px solid ${colors.border}`, transition: 'all 0.3s ease', cursor: 'pointer' },
-  motelCardHover: { transform: 'translateY(-6px)', borderColor: colors.primary, boxShadow: '0 12px 30px rgba(192, 132, 252, 0.15)' },
-  motelImage: { width: '100%', height: 120, borderRadius: 8, overflow: 'hidden', marginBottom: 12, backgroundColor: '#1F2937' },
+  motelesGrid: { 
+    display: 'flex', 
+    gap: 16, 
+    overflowX: 'auto', 
+    paddingBottom: 16, 
+    scrollbarWidth: 'none', 
+    msOverflowStyle: 'none' 
+  },
+  motelCard: { 
+    minWidth: 200, 
+    backgroundColor: 'rgba(30, 30, 40, 0.7)', 
+    borderRadius: 12, 
+    padding: 16, 
+    flexShrink: 0, 
+    border: `1px solid ${colors.border}`, 
+    transition: 'all 0.3s ease', 
+    cursor: 'pointer',
+    fontFamily: typography.fontFamilies.body,
+  },
+  motelCardHover: { 
+    transform: 'translateY(-6px)', 
+    borderColor: colors.primary, 
+    boxShadow: '0 12px 30px rgba(192, 132, 252, 0.15)' 
+  },
+  motelImage: { 
+    width: '100%', 
+    height: 120, 
+    borderRadius: 8, 
+    overflow: 'hidden', 
+    marginBottom: 12, 
+    backgroundColor: '#1F2937' 
+  },
 
   couponCard: {
     background: 'linear-gradient(135deg, #C084FC 0%, #A855F7 100%)',
@@ -242,10 +516,20 @@ export const homeStyles = {
     textAlign: 'center',
     maxWidth: 360,
     margin: '0 auto',
+    fontFamily: typography.fontFamilies.body,
   },
-  couponCardHover: { transform: 'translateY(-12px)', boxShadow: '0 20px 50px rgba(192, 132, 252, 0.5)' },
+  couponCardHover: { 
+    transform: 'translateY(-12px)', 
+    boxShadow: '0 20px 50px rgba(192, 132, 252, 0.5)' 
+  },
 
-  footer: { textAlign: 'center', marginTop: 60, color: '#6B7280', fontSize: 12, padding: '20px 0' },
+  footer: { 
+    ...typography.small,
+    textAlign: 'center', 
+    marginTop: 60, 
+    color: '#6B7280', 
+    padding: '20px 0' 
+  },
 };
 
 // ======================== ANIMACIONES GLOBALES ========================
@@ -262,6 +546,29 @@ export const globalKeyframes = `
     50% { box-shadow: 0 0 35px rgba(16, 185, 129, 1); }
   }
 `;
+
+// ======================== CDN PARA TIPOGRAFÍAS ========================
+export const typographyCDN = `
+  <!-- Agrega esto en tu index.html -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+`;
+
+// ======================== FUNCIÓN DE AYUDA PARA TIPOGRAFÍAS ========================
+export const getTypographyStyle = (type, customProps = {}) => {
+  const baseStyles = {
+    logo: typography.logo,
+    title: typography.title,
+    subtitle: typography.subtitle,
+    body: typography.body,
+    button: typography.button,
+    small: typography.small,
+    badge: typography.badge,
+  };
+
+  return { ...baseStyles[type] || typography.body, ...customProps };
+};
 // === USO RECOMENDADO EN TU AdminDashboard ===
 // Ejemplo de cómo aplicar:
 // <button style={globalStyles.button} onMouseEnter={e => e.currentTarget.style = {...globalStyles.button, ...globalStyles.buttonHover}}>

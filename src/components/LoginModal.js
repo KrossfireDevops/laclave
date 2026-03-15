@@ -12,7 +12,6 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   const { signInWithEmail, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  // ✅ Bloquear scroll del fondo cuando el modal está abierto
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -33,9 +32,9 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
 
     const { error } = await signInWithEmail(email, password);
     if (error) {
-      setError('Usuario o contraseña incorrectos.');
+      setError('🔐 El correo o la contraseña no coinciden. ¿Olvidaste tu contraseña?');
     } else {
-      onClose(); // ✅ Cerrar modal tras login exitoso
+      onClose();
     }
     setLoading(false);
   };
@@ -45,9 +44,9 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
     setError('');
     const { error } = await signInWithGoogle();
     if (error) {
-      setError('Error al iniciar con Google.');
+      setError('🧩 No pudimos conectarte con tu cuenta de Google. Por favor, inténtalo de nuevo.');
     } else {
-      onClose(); // ✅ Cerrar también tras Google
+      onClose();
     }
     setLoading(false);
   };
@@ -60,7 +59,6 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
 
   return (
     <>
-      {/* ✅ Ocultar scrollbar en Webkit (Chrome, Safari) */}
       <style>{`
         .login-modal-content::-webkit-scrollbar {
           display: none;
@@ -93,8 +91,8 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             maxWidth: 400,
             maxHeight: '90vh',
             overflowY: 'auto',
-            scrollbarWidth: 'none', // Firefox
-            msOverflowStyle: 'none', // IE/Edge
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
             border: '1px solid rgba(192, 132, 252, 0.2)',
             position: 'relative',
@@ -102,7 +100,6 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Botón de cerrar */}
           <button
             onClick={onClose}
             style={{
@@ -121,13 +118,11 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             ✕
           </button>
 
-          {/* Header */}
           <h2 style={{ 
             color: '#C084FC', 
             textAlign: 'center', 
             marginBottom: 8, 
-            fontSize: 22,
-            marginTop: 0
+            fontSize: 22
           }}>
             🔑 Bienvenido a LaClave
           </h2>
@@ -140,22 +135,20 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             Inicia sesión para acceder a tus cupones.
           </p>
 
-          {/* Error */}
           {error && (
             <div style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid #EF4444',
+              backgroundColor: 'rgba(192, 132, 252, 0.15)',
+              border: '1px solid #C084FC',
               borderRadius: 8,
               padding: 12,
               marginBottom: 16
             }}>
-              <p style={{ color: '#F87171', margin: 0, fontSize: 14 }}>
-                ❌ {error}
+              <p style={{ color: '#E0D6FF', margin: 0, fontSize: 14 }}>
+                {error}
               </p>
             </div>
           )}
 
-          {/* Formulario */}
           <form onSubmit={handleEmailLogin} style={{ width: '100%' }}>
             <input
               type="email"
@@ -196,7 +189,6 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
               }}
             />
 
-            {/* ¿Olvidaste tu contraseña? */}
             <div style={{ textAlign: 'right', marginBottom: 16 }}>
               <button
                 type="button"
@@ -239,7 +231,6 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             </button>
           </form>
 
-          {/* Divider */}
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -264,7 +255,6 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             }} />
           </div>
 
-          {/* Google Login */}
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
@@ -301,7 +291,6 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             {loading ? 'Cargando...' : 'Continuar con Google'}
           </button>
 
-          {/* Enlaces */}
           <p style={{ 
             textAlign: 'center', 
             marginTop: 20, 
