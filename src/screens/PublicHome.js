@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from '../components/LoginModal';
 import RegisterModal from '../components/RegisterModal';
-import VisitorPopup from '../components/VisitorPopup'; // ✅ NUEVO IMPORT
+import VisitorPopup from '../components/VisitorPopup';
 import { typography, homeStyles, colors } from '../styles/globalStyles';
 
 import logoImage from '../assets/logo-laclave.png';
@@ -13,11 +13,11 @@ import logoImage from '../assets/logo-laclave.png';
 // Función para parsear coordenadas
 const parseCoords = (coords) => {
   if (!coords) return null;
-  
+
   if (coords.latitude && coords.longitude) {
     return coords;
   }
-  
+
   if (typeof coords === 'string') {
     const parts = coords.split(',').map(s => s.trim());
     if (parts.length === 2) {
@@ -28,7 +28,7 @@ const parseCoords = (coords) => {
       }
     }
   }
-  
+
   return null;
 };
 
@@ -47,8 +47,8 @@ export default function PublicHome() {
   const [isMobile, setIsMobile] = useState(false);
   const menuRef = useRef(null);
   const profileMenuRef = useRef(null);
-  
-  // ✅ Estados para PopUp de visitantes
+
+  // Estados para PopUp de visitantes
   const [showVisitorPopup, setShowVisitorPopup] = useState(false);
 
   // Detectar si es móvil
@@ -56,14 +56,12 @@ export default function PublicHome() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // ✅ Función para manejar clic en botón principal
+  // Función para manejar clic en botón principal
   const handleVerCupones = () => {
     if (!currentUser) {
       setShowVisitorPopup(true);
@@ -76,8 +74,9 @@ export default function PublicHome() {
     setIsRegisterOpen(true);
   };
 
-  const handleBannerClick = () => {
-    handleRegister();
+  // ✅ MEJORA: Clic en banner avanza a la siguiente imagen (sin abrir registro)
+  const handleBannerNext = () => {
+    setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
   };
 
   const handleOpenMaps = (motel) => {
@@ -86,7 +85,7 @@ export default function PublicHome() {
       alert('📍 Ubicación no disponible para este motel.');
       return;
     }
-    const url = `https://www.google.com/maps/dir/?api=1&destination=    ${coords.latitude},${coords.longitude}`;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${coords.latitude},${coords.longitude}`;
     window.open(url, '_blank');
   };
 
@@ -152,7 +151,7 @@ export default function PublicHome() {
     fetchMoteles();
   }, []);
 
-  // Rotación de banners
+  // Rotación automática de banners
   useEffect(() => {
     if (banners.length <= 1) return;
     const interval = setInterval(() => {
@@ -198,7 +197,7 @@ export default function PublicHome() {
         }
       `}</style>
 
-      {/* ✅ PopUp para visitantes */}
+      {/* PopUp para visitantes */}
       <VisitorPopup
         isOpen={showVisitorPopup}
         onClose={() => setShowVisitorPopup(false)}
@@ -219,10 +218,10 @@ export default function PublicHome() {
         top: 0,
         zIndex: 1000,
       }}>
-        {/* DISPOSITIVO MÓVIL: Menú hamburguesa a la izquierda, logo en centro */}
+        {/* MÓVIL: Menú hamburguesa izquierda, logo en centro */}
         {isMobile ? (
           <>
-            {/* Menú hamburguesa izquierda */}
+            {/* Menú hamburguesa */}
             <div style={{ position: 'relative' }} ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -337,7 +336,7 @@ export default function PublicHome() {
               )}
             </div>
 
-            {/* Logo en el centro (mobile) */}
+            {/* Logo centrado en móvil */}
             <h1 style={{
               ...typography.logo,
               position: 'absolute',
@@ -349,12 +348,12 @@ export default function PublicHome() {
             </h1>
           </>
         ) : (
-          /* DESKTOP: Logo izquierda, navegación centro, usuario derecha */
+          /* DESKTOP: Logo izquierda, navegación centro */
           <>
-            {/* Logo a la izquierda */}
-            <div 
-              style={{ 
-                display: 'flex', 
+            {/* Logo */}
+            <div
+              style={{
+                display: 'flex',
                 alignItems: 'center',
                 cursor: 'pointer',
                 transition: 'all 0.3s',
@@ -370,9 +369,9 @@ export default function PublicHome() {
                 e.currentTarget.querySelector('img').style.filter = 'drop-shadow(0 2px 8px rgba(192, 132, 252, 0.3))';
               }}
             >
-              <img 
-                src={logoImage} 
-                alt="LaClave Logo" 
+              <img
+                src={logoImage}
+                alt="LaClave Logo"
                 style={{
                   height: 99,
                   width: '350autopx',
@@ -435,7 +434,7 @@ export default function PublicHome() {
               >
                 🎟️ Mis Cupones
               </button>
-              
+
               <button
                 onClick={() => {
                   if (!currentUser) {
@@ -465,14 +464,14 @@ export default function PublicHome() {
           </>
         )}
 
-        {/* Perfil/Login a la derecha (igual para móvil y desktop) */}
+        {/* Perfil / Login — igual para móvil y desktop */}
         <div style={{ position: 'relative' }} ref={profileMenuRef}>
           {currentUser ? (
             <>
               <div
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                style={{ 
-                  textAlign: 'center', 
+                style={{
+                  textAlign: 'center',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -602,20 +601,28 @@ export default function PublicHome() {
         </div>
       </header>
 
-      {/* Resto del contenido */}
+      {/* CONTENIDO PRINCIPAL */}
       <div style={{ marginTop: isMobile ? '20px' : '40px' }}>
-        {/* Subtítulo */}
-        {/* Banner */}
+
+        {/* ✅ BANNER — clic avanza a la siguiente imagen */}
         <div
           style={{
             ...homeStyles.bannerContainer,
             height: isMobile ? 220 : 400,
             marginBottom: isMobile ? 24 : 32,
+            cursor: banners.length > 1 ? 'pointer' : 'default',
           }}
-          onClick={banners.length > 0 ? handleBannerClick : undefined}
+          onClick={banners.length > 1 ? handleBannerNext : undefined}
         >
           {loading ? (
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1F2937' }}>
+            <div style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#1F2937'
+            }}>
               <div style={{
                 width: 48,
                 height: 48,
@@ -632,7 +639,7 @@ export default function PublicHome() {
               alt={banners[currentBannerIndex].titulo || 'Promoción LaClave'}
               style={homeStyles.bannerImage}
               onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/900x600/333/FFFFFF?text=Error+de+imagen    ';
+                e.target.src = 'https://via.placeholder.com/900x600/333/FFFFFF?text=Error+de+imagen';
               }}
             />
           ) : (
@@ -652,8 +659,8 @@ export default function PublicHome() {
               No hay promociones activas en este momento
             </div>
           )}
-          
-          {/* Indicadores */}
+
+          {/* Indicadores de posición */}
           {banners.length > 1 && (
             <div style={homeStyles.bannerDots}>
               {banners.map((_, i) => (
@@ -666,7 +673,7 @@ export default function PublicHome() {
           )}
         </div>
 
-        {/* Moteles Destacados */}
+        {/* MOTELES DESTACADOS */}
         <h3 style={{
           ...typography.title,
           color: '#DDD6FE',
@@ -676,7 +683,7 @@ export default function PublicHome() {
         }}>
           Moteles Destacados
         </h3>
-        
+
         {loadingMoteles ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <div style={{
@@ -701,8 +708,8 @@ export default function PublicHome() {
               paddingRight: isMobile ? '20px' : '0',
             }}>
             {moteles.map((motel) => (
-              <div 
-                key={motel.id} 
+              <div
+                key={motel.id}
                 onClick={() => navigate(`/motel/${motel.id}`)}
                 style={{
                   ...homeStyles.motelCard,
@@ -724,18 +731,14 @@ export default function PublicHome() {
                     <img
                       src={motel.cover_image}
                       alt={motel.nombre}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover'
-                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/200x120/333/C084FC?text=Motel    ';
+                        e.target.src = 'https://via.placeholder.com/200x120/333/C084FC?text=Motel';
                       }}
                     />
                   </div>
                 )}
-                
+
                 <h4 style={{
                   ...typography.subtitle,
                   color: '#E0E0FF',
@@ -744,7 +747,7 @@ export default function PublicHome() {
                 }}>
                   {motel.nombre}
                 </h4>
-                
+
                 {motel.rating && (
                   <p style={{
                     color: '#FFD700',
@@ -755,7 +758,7 @@ export default function PublicHome() {
                     ⭐ {parseFloat(motel.rating).toFixed(1)}
                   </p>
                 )}
-                
+
                 {motel.municipio && (
                   <p style={{
                     color: '#9CA3AF',
@@ -769,7 +772,7 @@ export default function PublicHome() {
                     📍 {motel.municipio}
                   </p>
                 )}
-                
+
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -819,7 +822,7 @@ export default function PublicHome() {
           </div>
         )}
 
-        {/* Cupones Destacados */}
+        {/* CUPONES DESTACADOS */}
         <h3 style={{
           ...typography.title,
           color: '#DDD6FE',
@@ -830,15 +833,15 @@ export default function PublicHome() {
         }}>
           ¡Cupones Exclusivos para Ti!
         </h3>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: isMobile ? 16 : 20,
           justifyContent: 'center',
           padding: isMobile ? '0 20px' : '0',
         }}>
-          <div 
-            onClick={handleVerCupones} // ✅ FUNCIÓN PROTEGIDA
+          <div
+            onClick={handleVerCupones}
             style={{
               ...homeStyles.couponCard,
               padding: isMobile ? 24 : 32,
@@ -882,7 +885,7 @@ export default function PublicHome() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleVerCupones(); // ✅ FUNCIÓN PROTEGIDA
+                handleVerCupones();
               }}
               style={{
                 backgroundColor: 'white',

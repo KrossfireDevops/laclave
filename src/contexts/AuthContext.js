@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [accessToken, setAccessToken] = useState(null); // ✅ NUEVO
 
   useEffect(() => {
     let isSubscribed = true;
@@ -26,6 +27,7 @@ export function AuthProvider({ children }) {
           console.error('Error al obtener sesión:', error);
           setCurrentUser(null);
           setRole(null);
+          setAccessToken(null); // ✅
           setLoading(false);
           return;
         }
@@ -52,15 +54,18 @@ export function AuthProvider({ children }) {
 
           setCurrentUser(enrichedUser);
           setRole(profile?.rol || 'cliente');
+          setAccessToken(session.access_token); // ✅
         } else {
           setCurrentUser(null);
           setRole(null);
+          setAccessToken(null); // ✅
         }
       } catch (err) {
         console.error('Excepción en initializeAuth:', err);
         if (isSubscribed) {
           setCurrentUser(null);
           setRole(null);
+          setAccessToken(null); // ✅
         }
       } finally {
         if (isSubscribed) {
@@ -98,15 +103,18 @@ export function AuthProvider({ children }) {
 
             setCurrentUser(enrichedUser);
             setRole(profile?.rol || 'cliente');
+            setAccessToken(session.access_token); // ✅
           } else {
             setCurrentUser(null);
             setRole(null);
+            setAccessToken(null); // ✅
           }
         } catch (err) {
           console.error('Error en onAuthStateChange:', err);
           if (isSubscribed) {
             setCurrentUser(null);
             setRole(null);
+            setAccessToken(null); // ✅
           }
         }
       }
@@ -119,7 +127,6 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signInWithGoogle = () => {
-    // ✅ En desarrollo local, no necesitas redirectTo si ya está configurado en Supabase
     const isLocal = window.location.hostname === 'localhost';
     const options = isLocal 
       ? {} 
@@ -141,6 +148,7 @@ export function AuthProvider({ children }) {
     currentUser,
     role,
     loading,
+    accessToken,  // ✅ NUEVO - disponible en toda la app
     signInWithGoogle,
     signInWithEmail,
     signOut
