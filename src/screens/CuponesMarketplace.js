@@ -178,11 +178,16 @@ export default function CuponesMarketplace() {
       }
 
       // ✅ 1. Reservar el cupón inmediatamente (status: reserved)
-      const { error: reservaError } = await supabase
+      const { data: reservaData, error: reservaError } = await supabase
         .from('cupones')
         .update({ status: 'reserved' })
         .eq('id', cuponId)
-        .eq('status', 'onSale'); // doble seguridad: solo si aún está onSale
+        .eq('status', 'onSale')
+        .select();
+
+      console.log('DATA:', JSON.stringify(reservaData));
+      console.log('ERROR:', JSON.stringify(reservaError));
+      console.log('FILAS AFECTADAS:', reservaData?.length);
 
       if (reservaError) {
         console.error('Error al reservar cupón:', reservaError);
@@ -219,6 +224,7 @@ export default function CuponesMarketplace() {
       setCupones(prev => prev.filter(c => c.id !== cuponId));
       setRecomendados(prev => prev.filter(c => c.id !== cuponId));
 
+      
       // Actualizar conteo por habitacion
       const cuponData = cupones.find(c => c.id === cuponId);
       if (cuponData?.habitacion_id) {

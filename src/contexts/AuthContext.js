@@ -55,11 +55,18 @@ export function AuthProvider({ children }) {
           setCurrentUser(enrichedUser);
           setRole(profile?.rol || 'cliente');
           setAccessToken(session.access_token); // ✅
-        } else {
-          setCurrentUser(null);
-          setRole(null);
-          setAccessToken(null); // ✅
-        }
+              } else {
+              setCurrentUser(null);
+              setRole(null);
+              setAccessToken(null);
+
+              // ✅ Redirigir al Home cuando la sesión se cierra
+              // Evitar redirigir si ya está en el Home o en páginas públicas
+              const rutasPublicas = ['/', '/auth/callback', '/forgot-password', '/reset-password'];
+              if (!rutasPublicas.includes(window.location.pathname)) {
+                window.location.href = '/';
+              }
+            }
       } catch (err) {
         console.error('Excepción en initializeAuth:', err);
         if (isSubscribed) {
